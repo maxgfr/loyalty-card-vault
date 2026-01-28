@@ -15,14 +15,15 @@ export class BarcodeScanner {
   async startScanning(
     videoElement: HTMLVideoElement,
     onResult: (result: Result) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    deviceId?: string
   ): Promise<void> {
     this.videoElement = videoElement
     this.isScanning = true
 
     try {
       this.controls = await this.reader.decodeFromVideoDevice(
-        undefined, // Use default camera
+        deviceId || undefined, // Use specified camera or default
         videoElement,
         (result, error) => {
           if (this.isScanning && result) {

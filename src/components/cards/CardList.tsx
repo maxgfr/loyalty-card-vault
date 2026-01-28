@@ -14,7 +14,7 @@ export function CardList({ cards, onCardClick }: CardListProps) {
 
   const filteredCards = cards.filter(card =>
     card.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    card.storeName.toLowerCase().includes(searchQuery.toLowerCase())
+    (card.storeName && card.storeName.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   return (

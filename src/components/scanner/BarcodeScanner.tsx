@@ -12,7 +12,7 @@ interface BarcodeScannerProps {
 
 export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const { isScanning, hasPermission, error, lastResult, startScanning, stopScanning, requestPermission } = useScanner()
+  const { isScanning, hasPermission, error, lastResult, cameras, selectedCamera, setSelectedCamera, startScanning, stopScanning, requestPermission } = useScanner()
 
   useEffect(() => {
     if (lastResult) {
@@ -53,6 +53,23 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
 
         {hasPermission && !isScanning && (
           <div className="scanner-prompt">
+            {cameras.length > 1 && (
+              <div className="scanner-camera-select">
+                <label htmlFor="camera-select">Select Camera:</label>
+                <select
+                  id="camera-select"
+                  value={selectedCamera}
+                  onChange={(e) => setSelectedCamera(e.target.value)}
+                  className="camera-select-dropdown"
+                >
+                  {cameras.map(camera => (
+                    <option key={camera.deviceId} value={camera.deviceId}>
+                      {camera.label || `Camera ${cameras.indexOf(camera) + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <Button onClick={handleStart} variant="primary">
               Start Scanning
             </Button>

@@ -19,7 +19,7 @@ export type BarcodeFormat =
 export interface LoyaltyCard {
   id: string
   name: string
-  storeName: string
+  storeName?: string
   barcodeData: string
   barcodeFormat: BarcodeFormat
   color: string

@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { LoyaltyCard, BarcodeFormat } from '../../types'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
-import { validateCard } from '../../lib/validation'
+import { validateCard, barcodeDataValidators } from '../../lib/validation'
+import { detectBarcodeFormat, suggestStoreNames, getStoreColor, generateColorFromString } from '../../lib/smart-detection'
+import { z } from 'zod'
 import './CardForm.css'
 
 interface CardFormProps {
@@ -46,15 +48,76 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [storeSuggestions, setStoreSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  // Auto-detect barcode format
+  useEffect(() => {
+    if (formData.barcodeData && !initialData) {
+      const detectedFormat = detectBarcodeFormat(formData.barcodeData)
+      if (detectedFormat && detectedFormat !== formData.barcodeFormat) {
+        setFormData(prev => ({ ...prev, barcodeFormat: detectedFormat }))
+      }
+    }
+  }, [formData.barcodeData, initialData])
+
+  // Real-time barcode validation
+  useEffect(() => {
+    if (formData.barcodeData) {
+      const validator = barcodeDataValidators[formData.barcodeFormat]
+      if (validator) {
+        const result = validator.safeParse(formData.barcodeData)
+        if (!result.success) {
+          setErrors(prev => ({ ...prev, barcodeData: result.error.issues[0].message }))
+        } else {
+          setErrors(prev => {
+            const newErrors = { ...prev }
+            delete newErrors.barcodeData
+            return newErrors
+          })
+        }
+      }
+    }
+  }, [formData.barcodeData, formData.barcodeFormat])
+
+  // Store name suggestions
+  useEffect(() => {
+    if (formData.storeName) {
+      const suggestions = suggestStoreNames(formData.storeName)
+      setStoreSuggestions(suggestions)
+    } else {
+      setStoreSuggestions([])
+    }
+  }, [formData.storeName])
+
+  // Auto-select color based on store name
+  useEffect(() => {
+    if (formData.storeName && !initialData) {
+      const storeColor = getStoreColor(formData.storeName)
+      if (storeColor && storeColor !== formData.color) {
+        setFormData(prev => ({ ...prev, color: storeColor }))
+      } else if (!storeColor && formData.storeName.length > 2) {
+        const generatedColor = generateColorFromString(formData.storeName)
+        setFormData(prev => ({ ...prev, color: generatedColor }))
+      }
+    }
+  }, [formData.storeName, initialData])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
-      validateCard(formData)
-      onSubmit(formData)
+      const validatedData = validateCard(formData)
+      onSubmit(validatedData)
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {}
+        error.issues.forEach(issue => {
+          const field = issue.path[0] as string
+          fieldErrors[field] = issue.message
+        })
+        setErrors(fieldErrors)
+      } else if (error instanceof Error) {
         setErrors({ form: error.message })
       }
     }
@@ -71,14 +134,37 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         required
       />
 
-      <Input
-        label="Store Name"
-        value={formData.storeName}
-        onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-        error={errors.storeName}
-        fullWidth
-        required
-      />
+      <div className="form-field-with-suggestions">
+        <Input
+          label="Store Name (optional)"
+          value={formData.storeName}
+          onChange={(e) => {
+            setFormData({ ...formData, storeName: e.target.value })
+            setShowSuggestions(true)
+          }}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+          error={errors.storeName}
+          fullWidth
+        />
+        {showSuggestions && storeSuggestions.length > 0 && (
+          <div className="store-suggestions">
+            {storeSuggestions.map(suggestion => (
+              <button
+                key={suggestion}
+                type="button"
+                className="store-suggestion-item"
+                onClick={() => {
+                  setFormData({ ...formData, storeName: suggestion })
+                  setShowSuggestions(false)
+                }}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <Input
         label="Barcode Data"
