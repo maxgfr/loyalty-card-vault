@@ -1,181 +1,212 @@
-# 🎴 Loyalty Card Vault
+# Loyalty Card Vault 🎴
 
-A secure, offline-first Progressive Web App for managing loyalty cards with barcode scanning capabilities.
+A secure, offline-first Progressive Web App (PWA) for managing your loyalty cards with barcode scanning and peer-to-peer device synchronization.
 
-## ✨ Features
+## 🌟 Features
 
-- 📸 **Barcode Scanning**: Scan loyalty cards using your device's camera (supports QR codes, EAN-13, UPC, CODE-128, and more)
-- 🔒 **Security Options**: Choose between simple mode (no encryption) or secure mode (AES-GCM encryption)
-- 💾 **Offline First**: Works completely offline after initial load
-- 📱 **PWA**: Installable on mobile and desktop devices
-- 💾 **Backup & Restore**: Export and import your cards as encrypted or plain JSON
-- 🔗 **Share**: Share card links via Web Share API or clipboard
-- 🎨 **Modern UI**: Dark mode by default with responsive design
-- #️⃣ **Hash Navigation**: Direct links to individual cards
+### Core Features
+- **📱 Barcode Scanning**: Scan loyalty cards using your device camera
+- **🔒 Encryption**: Optional AES-256-GCM encryption for sensitive data
+- **💾 Offline-First**: Works completely offline with IndexedDB storage
+- **📤 Backup & Restore**: Export/import your cards as JSON files
+- **🎨 Customization**: Color-code cards and add tags for organization
+- **🔍 Smart Detection**: Auto-detect store names and suggest tags
 
-## 🚀 Quick Start
+### Device Synchronization (NEW!)
+- **🔄 P2P Sync**: Synchronize cards between devices using WebRTC
+- **🚫 No Server Required**: 100% peer-to-peer, no data sent to servers
+- **🔐 Encrypted Transfer**: Optional session-level encryption
+- **📷 QR Code Pairing**: Simple pairing via QR code scanning
+- **⚡ Real-time**: Automatic sync once connected
+- **🔀 Conflict Resolution**: Last-write-wins strategy
+
+## 🚀 Live Demo
+
+Visit the live app: **[Loyalty Card Vault](https://YOUR-USERNAME.github.io/loyalty-card-vault/)**
+
+> Replace `YOUR-USERNAME` with your GitHub username
+
+## 📦 Tech Stack
+
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite (Rolldown)  
+- **Styling**: CSS with CSS Variables
+- **Storage**: IndexedDB (via idb)
+- **Encryption**: Web Crypto API
+- **Barcode**: ZXing library
+- **PWA**: Vite PWA plugin with Workbox
+- **Validation**: Zod
+- **P2P**: WebRTC with manual signaling
+- **Testing**: Vitest (120+ tests)
+
+## 🛠️ Development
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm 9+
+- Node.js 18+
+- pnpm (recommended) or npm
 
 ### Installation
 
-```bash
+\`\`\`bash
+# Clone the repository
+git clone https://github.com/YOUR-USERNAME/loyalty-card-vault.git
+cd loyalty-card-vault
+
 # Install dependencies
 pnpm install
 
 # Start development server
 pnpm dev
+\`\`\`
 
-# Build for production
+### Available Scripts
+
+\`\`\`bash
+pnpm dev          # Start development server
+pnpm build        # Build for production
+pnpm preview      # Preview production build
+pnpm test         # Run unit tests
+pnpm lint         # Lint code
+\`\`\`
+
+## 🔄 How to Sync Between Devices
+
+1. **On Host Device**:
+   - Go to Settings → Sync Devices
+   - Choose "Host Session"
+   - Display the QR code
+
+2. **On Guest Device**:
+   - Go to Settings → Sync Devices
+   - Choose "Join Session"
+   - Scan the host's QR code
+   - Show your answer QR code
+
+3. **Complete Pairing**:
+   - Host scans the guest's answer QR code
+   - Sync happens automatically!
+
+## 🚀 Deployment to GitHub Pages
+
+### Option 1: Automatic with GitHub Actions (Recommended)
+
+1. Create `.github/workflows/deploy.yml`:
+
+\`\`\`yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install
+      - run: pnpm build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+      - uses: actions/deploy-pages@v4
+\`\`\`
+
+2. Enable GitHub Pages:
+   - Go to repository Settings → Pages
+   - Source: "GitHub Actions"
+   - Save
+
+3. Push to main branch - deployment happens automatically!
+
+### Option 2: Manual Deployment
+
+\`\`\`bash
+# Build the project
 pnpm build
 
-# Preview production build
-pnpm preview
-```
+# Deploy dist/ folder to your hosting provider
+\`\`\`
 
-## 📦 Tech Stack
+## 📱 Install as PWA
 
-- **Framework**: React 19 with React Compiler
-- **Build Tool**: Vite 7 (rolldown-vite)
-- **Language**: TypeScript 5.9
-- **Storage**: IndexedDB via `idb`
-- **Encryption**: Web Crypto API (AES-GCM + PBKDF2)
-- **Scanner**: @zxing/browser
-- **Barcode Rendering**: bwip-js
-- **Validation**: Zod
-- **PWA**: vite-plugin-pwa with Workbox
+### iOS (Safari)
+1. Open app in Safari
+2. Tap Share button
+3. "Add to Home Screen"
+
+### Android (Chrome)
+1. Open app in Chrome
+2. Tap menu (⋮)
+3. "Add to Home screen"
+
+### Desktop
+1. Click install icon in address bar
+2. Click "Install"
+
+## 🧪 Testing
+
+\`\`\`bash
+# Run all tests (120+ tests)
+pnpm test
+
+# Run with UI
+pnpm test:ui
+
+# Coverage
+pnpm test:coverage
+\`\`\`
 
 ## 🏗️ Project Structure
 
-```
+\`\`\`
 src/
-├── components/
-│   ├── cards/          # Card-related components
-│   ├── layout/         # Layout components (Header, BottomNav)
-│   ├── scanner/        # Barcode scanner
-│   ├── settings/       # Settings page
-│   ├── setup/          # Initial setup flow
-│   └── ui/             # Reusable UI components
-├── hooks/              # Custom React hooks
-├── lib/                # Utilities (crypto, storage, scanner, backup)
-├── types/              # TypeScript type definitions
-└── App.tsx             # Main application component
-```
+├── components/           # React components
+│   ├── sync/            # P2P sync UI (NEW!)
+│   ├── cards/           # Card components
+│   ├── scanner/         # Barcode scanner
+│   └── ui/              # Reusable UI
+├── hooks/               # Custom hooks
+│   └── useSyncSession.ts # Sync hook (NEW!)
+├── lib/
+│   ├── sync/           # P2P sync logic (NEW!)
+│   ├── crypto.ts       # Encryption
+│   └── storage.ts      # IndexedDB
+└── types/              # TypeScript types
+\`\`\`
 
-## 🔐 Security
+## 🔒 Security & Privacy
 
-### Encryption Mode
+- ✅ **Local-First**: Data stays on your device
+- ✅ **End-to-End**: P2P sync, no server access
+- ✅ **Encryption**: AES-256-GCM when enabled
+- ✅ **No Tracking**: Zero analytics or telemetry
+- ✅ **Open Source**: Audit the code yourself
 
-When encryption is enabled:
-- All cards are encrypted using **AES-GCM** (256-bit key)
-- Password is derived using **PBKDF2** (100,000 iterations, SHA-256)
-- Each encryption uses a unique salt and IV
-- ⚠️ **Important**: If you lose your password, your data cannot be recovered
+## 📝 License
 
-### Simple Mode
-
-When encryption is disabled:
-- Cards are stored in IndexedDB without encryption
-- Faster performance
-- Suitable for non-sensitive data
-
-## 📱 PWA Installation
-
-### Desktop (Chrome/Edge)
-1. Click the install icon in the address bar
-2. Follow the prompts to install
-
-### iOS Safari
-1. Tap the Share button
-2. Select "Add to Home Screen"
-3. Confirm installation
-
-### Android Chrome
-1. Tap the three-dot menu
-2. Select "Install app" or "Add to Home Screen"
-
-## 🚀 Deployment
-
-### GitHub Pages
-
-This project is configured for automatic deployment to GitHub Pages via GitHub Actions.
-
-1. **Enable GitHub Pages**:
-   - Go to repository Settings → Pages
-   - Source: "GitHub Actions"
-
-2. **Push to main branch**:
-   ```bash
-   git push origin main
-   ```
-
-3. **Access your app**:
-   - `https://[username].github.io/loyalty-card-vault/`
-
-### Manual Deployment
-
-```bash
-# Build
-pnpm build
-
-# Deploy the dist/ folder to your hosting provider
-```
-
-## 🎯 Supported Barcode Formats
-
-- QR Code
-- EAN-13 / EAN-8
-- UPC-A / UPC-E
-- CODE-128
-- CODE-39
-- ITF (Interleaved 2 of 5)
-- Codabar
-- Data Matrix
-
-## 🔧 Configuration
-
-### Base Path
-
-Update `vite.config.ts` to change the base path:
-
-```typescript
-export default defineConfig({
-  base: '/your-path/',
-  // ...
-})
-```
-
-### PWA Manifest
-
-Edit `vite.config.ts` to customize PWA settings:
-
-```typescript
-VitePWA({
-  manifest: {
-    name: 'Your App Name',
-    theme_color: '#yourcolor',
-    // ...
-  }
-})
-```
+MIT License - Free to use, modify, and distribute!
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-MIT
-
-## 🙏 Acknowledgments
-
-- Built with React 19 and the new React Compiler
-- Barcode scanning powered by ZXing
-- Barcode rendering by bwip-js
+Contributions welcome! Feel free to:
+- Report bugs
+- Suggest features
+- Submit pull requests
 
 ---
 
-Made with ❤️ for secure loyalty card management
+**Built with** ❤️ **using React, TypeScript, and WebRTC**
