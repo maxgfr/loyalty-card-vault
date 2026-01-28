@@ -1,0 +1,24 @@
+.add-card-page {
+  min-height: 100vh;
+}
+
+.add-card-content {
+  padding: var(--space-lg);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.add-card-error {
+  background: var(--color-danger);
+  color: white;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .add-card-content {
+    padding: var(--space-md);
+  }
+}

@@ -1,0 +1,38 @@
+.card-item {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.card-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.card-item-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.card-item-store {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.card-item-format {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  width: fit-content;
+  text-transform: uppercase;
+}

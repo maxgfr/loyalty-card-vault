@@ -1,75 +1,192 @@
-# React + TypeScript + Vite
+# 🎴 Loyalty Card Vault
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A secure, offline-first Progressive Web App for managing loyalty cards with barcode scanning capabilities.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 📸 **Barcode Scanning**: Scan loyalty cards using your device's camera (supports QR codes, EAN-13, UPC, CODE-128, and more)
+- 🔒 **Security Options**: Choose between simple mode (no encryption) or secure mode (AES-GCM encryption)
+- 💾 **Offline First**: Works completely offline after initial load
+- 📱 **PWA**: Installable on mobile and desktop devices
+- 💾 **Backup & Restore**: Export and import your cards as encrypted or plain JSON
+- 🔗 **Share**: Share card links via Web Share API or clipboard
+- 🎨 **Modern UI**: Dark mode by default with responsive design
+- #️⃣ **Hash Navigation**: Direct links to individual cards
 
-## React Compiler
+## 🚀 Quick Start
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### Prerequisites
 
-Note: This will impact Vite dev & build performances.
+- Node.js 22+
+- pnpm 9+
 
-## Expanding the ESLint configuration
+### Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# Install dependencies
+pnpm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Start development server
+pnpm dev
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Build for production
+pnpm build
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Preview production build
+pnpm preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📦 Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Framework**: React 19 with React Compiler
+- **Build Tool**: Vite 7 (rolldown-vite)
+- **Language**: TypeScript 5.9
+- **Storage**: IndexedDB via `idb`
+- **Encryption**: Web Crypto API (AES-GCM + PBKDF2)
+- **Scanner**: @zxing/browser
+- **Barcode Rendering**: bwip-js
+- **Validation**: Zod
+- **PWA**: vite-plugin-pwa with Workbox
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🏗️ Project Structure
+
 ```
+src/
+├── components/
+│   ├── cards/          # Card-related components
+│   ├── layout/         # Layout components (Header, BottomNav)
+│   ├── scanner/        # Barcode scanner
+│   ├── settings/       # Settings page
+│   ├── setup/          # Initial setup flow
+│   └── ui/             # Reusable UI components
+├── hooks/              # Custom React hooks
+├── lib/                # Utilities (crypto, storage, scanner, backup)
+├── types/              # TypeScript type definitions
+└── App.tsx             # Main application component
+```
+
+## 🔐 Security
+
+### Encryption Mode
+
+When encryption is enabled:
+- All cards are encrypted using **AES-GCM** (256-bit key)
+- Password is derived using **PBKDF2** (100,000 iterations, SHA-256)
+- Each encryption uses a unique salt and IV
+- ⚠️ **Important**: If you lose your password, your data cannot be recovered
+
+### Simple Mode
+
+When encryption is disabled:
+- Cards are stored in IndexedDB without encryption
+- Faster performance
+- Suitable for non-sensitive data
+
+## 📱 PWA Installation
+
+### Desktop (Chrome/Edge)
+1. Click the install icon in the address bar
+2. Follow the prompts to install
+
+### iOS Safari
+1. Tap the Share button
+2. Select "Add to Home Screen"
+3. Confirm installation
+
+### Android Chrome
+1. Tap the three-dot menu
+2. Select "Install app" or "Add to Home Screen"
+
+## 🚀 Deployment
+
+### GitHub Pages
+
+This project is configured for automatic deployment to GitHub Pages via GitHub Actions.
+
+1. **Enable GitHub Pages**:
+   - Go to repository Settings → Pages
+   - Source: "GitHub Actions"
+
+2. **Push to main branch**:
+   ```bash
+   git push origin main
+   ```
+
+3. **Access your app**:
+   - `https://[username].github.io/loyalty-card-vault/`
+
+### Manual Deployment
+
+```bash
+# Build
+pnpm build
+
+# Deploy the dist/ folder to your hosting provider
+```
+
+## 🎯 Supported Barcode Formats
+
+- QR Code
+- EAN-13 / EAN-8
+- UPC-A / UPC-E
+- CODE-128
+- CODE-39
+- ITF (Interleaved 2 of 5)
+- Codabar
+- Data Matrix
+
+## 🔧 Configuration
+
+### Base Path
+
+Update `vite.config.ts` to change the base path:
+
+```typescript
+export default defineConfig({
+  base: '/your-path/',
+  // ...
+})
+```
+
+### PWA Manifest
+
+Edit `vite.config.ts` to customize PWA settings:
+
+```typescript
+VitePWA({
+  manifest: {
+    name: 'Your App Name',
+    theme_color: '#yourcolor',
+    // ...
+  }
+})
+```
+
+## 📋 Roadmap
+
+- [ ] Edit existing cards
+- [ ] Pre-fill form from scan results
+- [ ] Card categories/tags
+- [ ] Custom card colors per store
+- [ ] Export individual cards as images
+- [ ] Biometric unlock (WebAuthn)
+- [ ] Multi-language support
+- [ ] Light theme
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+MIT
+
+## 🙏 Acknowledgments
+
+- Built with React 19 and the new React Compiler
+- Barcode scanning powered by ZXing
+- Barcode rendering by bwip-js
+
+---
+
+Made with ❤️ for secure loyalty card management

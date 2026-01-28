@@ -60,7 +60,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt,
+      salt: salt.buffer as ArrayBuffer,
       iterations: ITERATIONS,
       hash: 'SHA-256',
     },
@@ -83,16 +83,16 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
   const encryptedBuffer = await crypto.subtle.encrypt(
     {
       name: ALGORITHM,
-      iv,
+      iv: iv.buffer as ArrayBuffer,
     },
     key,
     encoder.encode(data)
   )
 
   return {
-    iv: arrayBufferToBase64(iv),
+    iv: arrayBufferToBase64(iv.buffer as ArrayBuffer),
     data: arrayBufferToBase64(encryptedBuffer),
-    salt: arrayBufferToBase64(salt),
+    salt: arrayBufferToBase64(salt.buffer as ArrayBuffer),
   }
 }
 
@@ -103,15 +103,16 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
 export async function decrypt(payload: EncryptedPayload, password: string): Promise<string> {
   try {
     const decoder = new TextDecoder()
-    const salt = new Uint8Array(base64ToArrayBuffer(payload.salt))
-    const iv = new Uint8Array(base64ToArrayBuffer(payload.iv))
+    const saltBuffer = base64ToArrayBuffer(payload.salt)
+    const salt = new Uint8Array(saltBuffer)
+    const ivBuffer = base64ToArrayBuffer(payload.iv)
     const encryptedData = base64ToArrayBuffer(payload.data)
     const key = await deriveKey(password, salt)
 
     const decryptedBuffer = await crypto.subtle.decrypt(
       {
         name: ALGORITHM,
-        iv,
+        iv: ivBuffer,
       },
       key,
       encryptedData

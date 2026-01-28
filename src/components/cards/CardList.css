@@ -1,0 +1,34 @@
+.card-list {
+  padding: var(--space-lg);
+}
+
+.card-list-search {
+  margin-bottom: var(--space-lg);
+}
+
+.card-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-lg);
+}
+
+.card-list-empty {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--color-text-muted);
+}
+
+.card-list-empty-hint {
+  margin-top: var(--space-sm);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .card-list {
+    padding: var(--space-md);
+  }
+
+  .card-list-grid {
+    grid-template-columns: 1fr;
+  }
+}

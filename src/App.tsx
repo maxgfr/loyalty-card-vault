@@ -1,33 +1,130 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
+import { Layout } from './components/layout/Layout'
+import { SetupPage } from './components/setup/SetupPage'
+import { CardList } from './components/cards/CardList'
+import { CardDetail } from './components/cards/CardDetail'
+import { AddCardPage } from './components/cards/AddCardPage'
+import { BarcodeScanner } from './components/scanner/BarcodeScanner'
+import { SettingsPage } from './components/settings/SettingsPage'
+import { ToastContainer } from './components/ui/Toast'
+import { useHashRouter } from './hooks/useHashRouter'
+import { useCards } from './hooks/useCards'
+import { useShare } from './hooks/useShare'
+import { getSettings } from './lib/storage'
+import type { ScanResult } from './types'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { route, navigate, goBack } = useHashRouter()
+  const { cards, addCard, deleteCard, refreshCards } = useCards()
+  const { shareCard } = useShare()
+  const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null)
+  const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
+
+  useEffect(() => {
+    checkSetup()
+  }, [])
+
+  const checkSetup = async () => {
+    try {
+      await getSettings()
+      setIsSetupComplete(true)
+    } catch {
+      setIsSetupComplete(false)
+    }
+  }
+
+  const handleSetupComplete = () => {
+    setIsSetupComplete(true)
+    navigate({ page: 'home' })
+  }
+
+  const addToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = `${Date.now()}-${Math.random()}`
+    setToasts(prev => [...prev, { id, message, type }])
+  }
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }
+
+  const handleScanResult = async (_result: ScanResult) => {
+    navigate({ page: 'add' })
+    // TODO: Pre-fill the form with scan result
+  }
+
+  const handleShare = async (cardId: string) => {
+    const card = cards.find(c => c.id === cardId)
+    if (!card) return
+
+    const result = await shareCard(card)
+    if (result.success) {
+      addToast(result.fallback === 'clipboard' ? 'Link copied to clipboard' : 'Card shared successfully')
+    } else if (!result.cancelled) {
+      addToast(result.error || 'Failed to share card', 'error')
+    }
+  }
+
+  const handleDeleteCard = async (cardId: string) => {
+    try {
+      await deleteCard(cardId)
+      addToast('Card deleted successfully')
+      goBack()
+    } catch (err) {
+      addToast('Failed to delete card', 'error')
+    }
+  }
+
+  if (isSetupComplete === null) {
+    return (
+      <div className="app-loading">
+        <div className="spinner" />
+      </div>
+    )
+  }
+
+  if (!isSetupComplete) {
+    return <SetupPage onComplete={handleSetupComplete} />
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Layout>
+        {route.page === 'home' && (
+          <CardList cards={cards} onCardClick={(id) => navigate({ page: 'card', cardId: id })} />
+        )}
+
+        {route.page === 'card' && (() => {
+          const card = cards.find(c => c.id === route.cardId)
+          return card ? (
+            <CardDetail
+              card={card}
+              onBack={goBack}
+              onEdit={() => addToast('Edit not implemented yet')}
+              onDelete={() => handleDeleteCard(card.id)}
+              onShare={() => handleShare(card.id)}
+            />
+          ) : (
+            <div className="page-error">
+              <p>Card not found</p>
+            </div>
+          )
+        })()}
+
+        {route.page === 'scan' && (
+          <BarcodeScanner onScan={handleScanResult} onClose={goBack} />
+        )}
+
+        {route.page === 'add' && (
+          <AddCardPage onBack={goBack} onAdd={addCard} />
+        )}
+
+        {route.page === 'settings' && (
+          <SettingsPage onBack={goBack} onRefreshCards={refreshCards} />
+        )}
+      </Layout>
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </>
   )
 }
