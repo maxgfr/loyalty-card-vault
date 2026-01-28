@@ -36,3 +36,30 @@
   width: fit-content;
   text-transform: uppercase;
 }
+
+.card-item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.card-item-tag {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
+.card-item-tag-more {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}

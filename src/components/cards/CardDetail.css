@@ -29,6 +29,23 @@
   text-transform: uppercase;
 }
 
+.card-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.card-detail-tag {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
 .card-detail-notes {
   margin-top: var(--space-sm);
   padding-top: var(--space-sm);

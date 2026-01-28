@@ -11,20 +11,32 @@ function parseHash(hash: string): Route {
     return { page: 'home' }
   }
 
-  const segments = path.split('/').filter(Boolean)
+  // Split path and query parameters
+  const [pathPart, queryPart] = path.split('?')
+  const segments = pathPart.split('/').filter(Boolean)
   const [page, ...params] = segments
+
+  // Parse query parameters
+  const queryParams = new URLSearchParams(queryPart || '')
 
   switch (page) {
     case 'card':
       return { page: 'card', cardId: params[0] || '' }
     case 'scan':
       return { page: 'scan' }
-    case 'add':
-      return { page: 'add' }
+    case 'add': {
+      const barcodeData = queryParams.get('barcodeData') || undefined
+      const barcodeFormat = queryParams.get('barcodeFormat') as any || undefined
+      return { page: 'add', barcodeData, barcodeFormat }
+    }
+    case 'edit':
+      return { page: 'edit', cardId: params[0] || '' }
     case 'settings':
       return { page: 'settings' }
     case 'setup':
       return { page: 'setup' }
+    case 'help':
+      return { page: 'help' }
     default:
       return { page: 'home' }
   }
@@ -41,12 +53,21 @@ function routeToHash(route: Route): string {
       return `#/card/${route.cardId}`
     case 'scan':
       return '#/scan'
-    case 'add':
-      return '#/add'
+    case 'add': {
+      const params = new URLSearchParams()
+      if (route.barcodeData) params.set('barcodeData', route.barcodeData)
+      if (route.barcodeFormat) params.set('barcodeFormat', route.barcodeFormat)
+      const query = params.toString()
+      return query ? `#/add?${query}` : '#/add'
+    }
+    case 'edit':
+      return `#/edit/${route.cardId}`
     case 'settings':
       return '#/settings'
     case 'setup':
       return '#/setup'
+    case 'help':
+      return '#/help'
     default:
       return '#/'
   }

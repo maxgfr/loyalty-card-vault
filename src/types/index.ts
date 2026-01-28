@@ -24,6 +24,7 @@ export interface LoyaltyCard {
   barcodeFormat: BarcodeFormat
   color: string
   notes?: string
+  tags?: string[]
   createdAt: number
   updatedAt: number
 }
@@ -78,7 +79,8 @@ export type Route =
   | { page: 'home' }
   | { page: 'card'; cardId: string }
   | { page: 'scan' }
-  | { page: 'add' }
+  | { page: 'add'; barcodeData?: string; barcodeFormat?: BarcodeFormat }
+  | { page: 'edit'; cardId: string }
   | { page: 'settings' }
   | { page: 'setup' }
   | { page: 'help' }

@@ -4,6 +4,7 @@ import { SetupPage } from './components/setup/SetupPage'
 import { CardList } from './components/cards/CardList'
 import { CardDetail } from './components/cards/CardDetail'
 import { AddCardPage } from './components/cards/AddCardPage'
+import { EditCardPage } from './components/cards/EditCardPage'
 import { BarcodeScanner } from './components/scanner/BarcodeScanner'
 import { SettingsPage } from './components/settings/SettingsPage'
 import { HelpPage } from './components/help/HelpPage'
@@ -12,12 +13,12 @@ import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
 import { useShare } from './hooks/useShare'
 import { getSettings } from './lib/storage'
-import type { ScanResult } from './types'
+import type { ScanResult, LoyaltyCard } from './types'
 import './App.css'
 
 function App() {
   const { route, navigate, goBack } = useHashRouter()
-  const { cards, addCard, deleteCard, refreshCards } = useCards()
+  const { cards, addCard, updateCard, deleteCard, refreshCards } = useCards()
   const { shareCard } = useShare()
   const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
@@ -49,9 +50,12 @@ function App() {
     setToasts(prev => prev.filter(t => t.id !== id))
   }
 
-  const handleScanResult = async (_result: ScanResult) => {
-    navigate({ page: 'add' })
-    // TODO: Pre-fill the form with scan result
+  const handleScanResult = async (result: ScanResult) => {
+    navigate({
+      page: 'add',
+      barcodeData: result.text,
+      barcodeFormat: result.format
+    })
   }
 
   const handleShare = async (cardId: string) => {
@@ -63,6 +67,15 @@ function App() {
       addToast(result.fallback === 'clipboard' ? 'Link copied to clipboard' : 'Card shared successfully')
     } else if (!result.cancelled) {
       addToast(result.error || 'Failed to share card', 'error')
+    }
+  }
+
+  const handleUpdateCard = async (cardId: string, updates: Partial<Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    try {
+      await updateCard(cardId, updates)
+      addToast('Card updated successfully')
+    } catch (err) {
+      addToast('Failed to update card', 'error')
     }
   }
 
@@ -101,7 +114,7 @@ function App() {
             <CardDetail
               card={card}
               onBack={goBack}
-              onEdit={() => addToast('Edit not implemented yet')}
+              onEdit={() => navigate({ page: 'edit', cardId: card.id })}
               onDelete={() => handleDeleteCard(card.id)}
               onShare={() => handleShare(card.id)}
             />
@@ -117,8 +130,28 @@ function App() {
         )}
 
         {route.page === 'add' && (
-          <AddCardPage onBack={goBack} onAdd={addCard} />
+          <AddCardPage
+            onBack={goBack}
+            onAdd={addCard}
+            barcodeData={route.barcodeData}
+            barcodeFormat={route.barcodeFormat}
+          />
         )}
+
+        {route.page === 'edit' && (() => {
+          const card = cards.find(c => c.id === route.cardId)
+          return card ? (
+            <EditCardPage
+              card={card}
+              onBack={goBack}
+              onUpdate={handleUpdateCard}
+            />
+          ) : (
+            <div className="page-error">
+              <p>Card not found</p>
+            </div>
+          )
+        })()}
 
         {route.page === 'settings' && (
           <SettingsPage onBack={goBack} onRefreshCards={refreshCards} />

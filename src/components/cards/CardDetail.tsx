@@ -5,6 +5,7 @@ import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { CardBarcode } from './CardBarcode'
+import { exportCardAsImage } from '../../lib/export-image'
 import './CardDetail.css'
 
 interface CardDetailProps {
@@ -17,10 +18,23 @@ interface CardDetailProps {
 
 export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDetailProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const handleDelete = () => {
     onDelete()
     setShowDeleteModal(false)
+  }
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+      await exportCardAsImage(card)
+    } catch (error) {
+      console.error('Failed to export card:', error)
+      alert('Failed to export card as image')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
@@ -44,6 +58,13 @@ export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDeta
         <Card className="card-detail-info" style={{ borderLeft: `4px solid ${card.color}` }}>
           <h2 className="card-detail-store">{card.storeName}</h2>
           <p className="card-detail-format">{card.barcodeFormat.replace('_', ' ')}</p>
+          {card.tags && card.tags.length > 0 && (
+            <div className="card-detail-tags">
+              {card.tags.map(tag => (
+                <span key={tag} className="card-detail-tag">{tag}</span>
+              ))}
+            </div>
+          )}
           {card.notes && <p className="card-detail-notes">{card.notes}</p>}
         </Card>
 
@@ -55,6 +76,14 @@ export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDeta
         <div className="card-detail-actions">
           <Button variant="primary" fullWidth onClick={onShare}>
             Share Card
+          </Button>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? 'Exporting...' : 'Export as Image'}
           </Button>
         </div>
       </div>

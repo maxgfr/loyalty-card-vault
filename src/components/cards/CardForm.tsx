@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react'
 import type { LoyaltyCard, BarcodeFormat } from '../../types'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
+import { ColorPicker } from '../ui/ColorPicker'
+import { TagInput } from '../ui/TagInput'
 import { validateCard, barcodeDataValidators } from '../../lib/validation'
-import { detectBarcodeFormat, suggestStoreNames, getStoreColor, generateColorFromString } from '../../lib/smart-detection'
+import { detectBarcodeFormat, suggestStoreNames, getStoreColor, generateColorFromString, STORE_COLORS } from '../../lib/smart-detection'
+import { getTagSuggestions, suggestTagsForStore } from '../../lib/tag-categories'
 import { z } from 'zod'
 import './CardForm.css'
 
@@ -26,16 +29,28 @@ const BARCODE_FORMATS: BarcodeFormat[] = [
   'DATA_MATRIX',
 ]
 
-const DEFAULT_COLORS = [
-  '#6366f1',
-  '#8b5cf6',
-  '#ec4899',
-  '#ef4444',
-  '#f59e0b',
-  '#10b981',
-  '#06b6d4',
-  '#3b82f6',
-]
+// Get unique colors from stores
+const getPresetColors = (): string[] => {
+  const uniqueColors = new Set<string>()
+
+  // Add store brand colors
+  Object.values(STORE_COLORS).forEach(color => {
+    if (color) uniqueColors.add(color.toUpperCase())
+  })
+
+  // Add some default colors if not enough store colors
+  const defaultColors = [
+    '#6366F1', '#8B5CF6', '#EC4899', '#EF4444',
+    '#F59E0B', '#10B981', '#06B6D4', '#3B82F6',
+    '#14B8A6', '#F97316', '#84CC16', '#A855F7'
+  ]
+
+  defaultColors.forEach(color => uniqueColors.add(color))
+
+  return Array.from(uniqueColors).slice(0, 24) // Limit to 24 colors
+}
+
+const PRESET_COLORS = getPresetColors()
 
 export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
   const [formData, setFormData] = useState({
@@ -43,13 +58,15 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
     storeName: initialData?.storeName || '',
     barcodeData: initialData?.barcodeData || '',
     barcodeFormat: initialData?.barcodeFormat || ('QR_CODE' as BarcodeFormat),
-    color: initialData?.color || DEFAULT_COLORS[0],
+    color: initialData?.color || PRESET_COLORS[0],
     notes: initialData?.notes || '',
+    tags: initialData?.tags || [],
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [storeSuggestions, setStoreSuggestions] = useState<string[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>(getTagSuggestions())
 
   // Auto-detect barcode format
   useEffect(() => {
@@ -99,6 +116,18 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
       } else if (!storeColor && formData.storeName.length > 2) {
         const generatedColor = generateColorFromString(formData.storeName)
         setFormData(prev => ({ ...prev, color: generatedColor }))
+      }
+    }
+  }, [formData.storeName, initialData])
+
+  // Auto-suggest tags based on store name
+  useEffect(() => {
+    if (formData.storeName && formData.storeName.length > 2 && !initialData) {
+      const autoTags = suggestTagsForStore(formData.storeName)
+      if (autoTags.length > 0) {
+        // Merge auto-suggested tags with existing tag suggestions
+        const allSuggestions = [...new Set([...autoTags, ...getTagSuggestions()])]
+        setTagSuggestions(allSuggestions)
       }
     }
   }, [formData.storeName, initialData])
@@ -190,21 +219,21 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         </select>
       </div>
 
-      <div className="form-field">
-        <label className="form-label">Color</label>
-        <div className="color-picker">
-          {DEFAULT_COLORS.map(color => (
-            <button
-              key={color}
-              type="button"
-              className={`color-option ${formData.color === color ? 'color-option--active' : ''}`}
-              style={{ backgroundColor: color }}
-              onClick={() => setFormData({ ...formData, color })}
-              aria-label={`Select color ${color}`}
-            />
-          ))}
-        </div>
-      </div>
+      <ColorPicker
+        label="Card Color"
+        value={formData.color}
+        onChange={(color) => setFormData({ ...formData, color })}
+        presetColors={PRESET_COLORS}
+      />
+
+      <TagInput
+        label="Tags (optional)"
+        value={formData.tags}
+        onChange={(tags) => setFormData({ ...formData, tags })}
+        suggestions={tagSuggestions}
+        placeholder="Add a tag..."
+        maxTags={10}
+      />
 
       <div className="form-field">
         <label className="form-label">Notes (optional)</label>

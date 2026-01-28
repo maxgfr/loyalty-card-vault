@@ -176,7 +176,7 @@ function buildStoreColorsMap(): Record<string, string> {
   return colorMap
 }
 
-export const STORE_COLORS = buildStoreColorsMap()
+export const STORE_COLORS: Record<string, string> = buildStoreColorsMap()
 
 /**
  * Auto-detect barcode format from data

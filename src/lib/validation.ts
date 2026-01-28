@@ -47,6 +47,7 @@ export const cardSchema = z.object({
   barcodeFormat: barcodeFormatSchema,
   color: colorSchema,
   notes: z.string().max(500, 'Notes too long').optional(),
+  tags: z.array(z.string().min(1).max(30)).max(10).optional(),
 }).superRefine((data, ctx) => {
   const validator = barcodeDataValidators[data.barcodeFormat]
   if (validator) {

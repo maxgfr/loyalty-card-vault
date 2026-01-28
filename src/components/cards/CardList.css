@@ -3,7 +3,41 @@
 }
 
 .card-list-search {
+  margin-bottom: var(--space-md);
+}
+
+.card-list-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
   margin-bottom: var(--space-lg);
+  padding: var(--space-sm);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+}
+
+.card-list-tag {
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card-list-tag:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.card-list-tag--active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
 }
 
 .card-list-grid {
