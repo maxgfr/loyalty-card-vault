@@ -13,6 +13,10 @@ interface SettingsPageProps {
   onRefreshCards: () => void
 }
 
+function navigateToHelp() {
+  window.location.hash = '#help'
+}
+
 export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [password, setPassword] = useState('')
@@ -129,6 +133,18 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             {message.text}
           </div>
         )}
+
+        <Card>
+          <h3 className="settings-section-title">Aide & Installation</h3>
+          <p className="settings-section-description">
+            Comment installer l'app, scanner des cartes, et plus encore
+          </p>
+          <div className="settings-actions">
+            <Button variant="primary" onClick={navigateToHelp} fullWidth>
+              📱 Voir le guide d'aide
+            </Button>
+          </div>
+        </Card>
 
         <Card>
           <h3 className="settings-section-title">About</h3>

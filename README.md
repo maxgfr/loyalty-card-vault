@@ -162,17 +162,6 @@ VitePWA({
 })
 ```
 
-## 📋 Roadmap
-
-- [ ] Edit existing cards
-- [ ] Pre-fill form from scan results
-- [ ] Card categories/tags
-- [ ] Custom card colors per store
-- [ ] Export individual cards as images
-- [ ] Biometric unlock (WebAuthn)
-- [ ] Multi-language support
-- [ ] Light theme
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

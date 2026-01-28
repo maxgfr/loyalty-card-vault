@@ -1,64 +1,182 @@
 import type { BarcodeFormat } from '../types'
 
 /**
- * Common store names for suggestions
+ * Store data by country
  */
-export const COMMON_STORES = [
-  'Starbucks',
-  'Target',
-  'Walmart',
-  'CVS',
-  'Walgreens',
-  'Best Buy',
-  'Home Depot',
-  'Whole Foods',
-  'Trader Joe\'s',
-  'Costco',
-  'Sam\'s Club',
-  'Kroger',
-  'Safeway',
-  'Subway',
-  'McDonald\'s',
-  'Dunkin\'',
-  'Panera Bread',
-  'Chipotle',
-  'Sephora',
-  'Ulta',
-  'Petco',
-  'PetSmart',
-  'GameStop',
-  'Barnes & Noble',
-  'AMC Theatres',
-  'Regal Cinemas',
-  'Marriott',
-  'Hilton',
-  'Delta',
-  'United Airlines',
-  'Southwest',
-]
+interface StoreData {
+  name: string
+  color: string
+}
 
 /**
- * Store-specific color associations
+ * Stores by country
  */
-export const STORE_COLORS: Record<string, string> = {
-  'starbucks': '#00704A',
-  'target': '#CC0000',
-  'walmart': '#0071CE',
-  'cvs': '#CC0000',
-  'walgreens': '#E31837',
-  'best buy': '#0046BE',
-  'home depot': '#F96302',
-  'whole foods': '#00674E',
-  'trader joe\'s': '#CC1F27',
-  'costco': '#0071CE',
-  'sam\'s club': '#0071CE',
-  'subway': '#008C15',
-  'mcdonald\'s': '#FFC72C',
-  'dunkin\'': '#FF6600',
-  'panera bread': '#6F4E37',
-  'chipotle': '#A81612',
-  'sephora': '#000000',
+const STORES_BY_COUNTRY: Record<string, StoreData[]> = {
+  FR: [
+    // Supermarchés
+    { name: 'Carrefour', color: '#005AA9' },
+    { name: 'Auchan', color: '#ED1C24' },
+    { name: 'Leclerc', color: '#005CAB' },
+    { name: 'Intermarché', color: '#E30613' },
+    { name: 'Super U', color: '#ED1C24' },
+    { name: 'Lidl', color: '#0050AA' },
+    { name: 'Casino', color: '#E30613' },
+    { name: 'Monoprix', color: '#E30613' },
+    { name: 'Franprix', color: '#00A650' },
+    { name: 'Biocoop', color: '#6BB43F' },
+
+    // Restaurants
+    { name: 'McDonald\'s', color: '#FFC72C' },
+    { name: 'Quick', color: '#ED1C24' },
+    { name: 'KFC', color: '#E4002B' },
+    { name: 'Subway', color: '#008C15' },
+    { name: 'Burger King', color: '#EC1C24' },
+    { name: 'Paul', color: '#8B4513' },
+    { name: 'Starbucks', color: '#00704A' },
+
+    // Mode & Beauté
+    { name: 'Sephora', color: '#000000' },
+    { name: 'Nocibé', color: '#E30613' },
+    { name: 'Marionnaud', color: '#E4002B' },
+    { name: 'H&M', color: '#E50010' },
+    { name: 'Zara', color: '#000000' },
+    { name: 'Décathlon', color: '#0082C3' },
+    { name: 'Go Sport', color: '#ED1C24' },
+    { name: 'Kiabi', color: '#E30613' },
+
+    // Multimédia & Électronique
+    { name: 'Fnac', color: '#F39200' },
+    { name: 'Darty', color: '#E30613' },
+    { name: 'Boulanger', color: '#E30613' },
+    { name: 'Micromania', color: '#ED1C24' },
+
+    // Bricolage & Maison
+    { name: 'Leroy Merlin', color: '#78BE20' },
+    { name: 'Castorama', color: '#0072BB' },
+    { name: 'Bricomarché', color: '#E30613' },
+    { name: 'Ikea', color: '#0051BA' },
+    { name: 'BUT', color: '#E30613' },
+    { name: 'Conforama', color: '#E30613' },
+
+    // Pharmacie & Santé
+    { name: 'Pharmacie', color: '#00A650' },
+    { name: 'Parapharmacie Leclerc', color: '#005CAB' },
+
+    // Carburant
+    { name: 'Total', color: '#EE3124' },
+    { name: 'BP', color: '#008A00' },
+    { name: 'Esso', color: '#E31937' },
+    { name: 'Shell', color: '#FFD100' },
+
+    // Autres
+    { name: 'Nature & Découvertes', color: '#6BB43F' },
+    { name: 'Cultura', color: '#F39200' },
+    { name: 'Action', color: '#E30613' },
+  ],
+
+  US: [
+    { name: 'Starbucks', color: '#00704A' },
+    { name: 'Target', color: '#CC0000' },
+    { name: 'Walmart', color: '#0071CE' },
+    { name: 'CVS', color: '#CC0000' },
+    { name: 'Walgreens', color: '#E31837' },
+    { name: 'Best Buy', color: '#0046BE' },
+    { name: 'Home Depot', color: '#F96302' },
+    { name: 'Whole Foods', color: '#00674E' },
+    { name: 'Trader Joe\'s', color: '#CC1F27' },
+    { name: 'Costco', color: '#0071CE' },
+    { name: 'Sam\'s Club', color: '#0071CE' },
+    { name: 'Kroger', color: '#0A3161' },
+    { name: 'Safeway', color: '#E31837' },
+    { name: 'Subway', color: '#008C15' },
+    { name: 'McDonald\'s', color: '#FFC72C' },
+    { name: 'Dunkin\'', color: '#FF6600' },
+    { name: 'Panera Bread', color: '#6F4E37' },
+    { name: 'Chipotle', color: '#A81612' },
+    { name: 'Sephora', color: '#000000' },
+    { name: 'Ulta', color: '#FF6EB4' },
+    { name: 'Petco', color: '#001489' },
+    { name: 'PetSmart', color: '#003DA5' },
+    { name: 'GameStop', color: '#CC0000' },
+    { name: 'Barnes & Noble', color: '#5C7F3A' },
+    { name: 'AMC Theatres', color: '#CC0000' },
+    { name: 'Regal Cinemas', color: '#00AEEF' },
+    { name: 'Marriott', color: '#B71C1C' },
+    { name: 'Hilton', color: '#0057A0' },
+    { name: 'Delta', color: '#C8102E' },
+    { name: 'United Airlines', color: '#0076A8' },
+    { name: 'Southwest', color: '#F9B612' },
+  ],
+
+  // Magasins internationaux
+  INTL: [
+    { name: 'Apple Store', color: '#000000' },
+    { name: 'Nike', color: '#111111' },
+    { name: 'Adidas', color: '#000000' },
+    { name: 'Zara', color: '#000000' },
+    { name: 'H&M', color: '#E50010' },
+    { name: 'IKEA', color: '#0051BA' },
+    { name: 'McDonald\'s', color: '#FFC72C' },
+    { name: 'Starbucks', color: '#00704A' },
+    { name: 'Subway', color: '#008C15' },
+    { name: 'KFC', color: '#E4002B' },
+    { name: 'Pizza Hut', color: '#EE3124' },
+    { name: 'Burger King', color: '#EC1C24' },
+  ],
 }
+
+/**
+ * Detect user's country from browser locale
+ */
+export function detectUserCountry(): 'FR' | 'US' | 'INTL' {
+  const locale = navigator.language || 'en-US'
+
+  if (locale.startsWith('fr')) return 'FR'
+  if (locale.startsWith('en-US') || locale.startsWith('en-GB')) return 'US'
+
+  return 'INTL'
+}
+
+/**
+ * Get stores for user's country
+ */
+export function getStoresForCountry(country?: 'FR' | 'US' | 'INTL'): StoreData[] {
+  const userCountry = country || detectUserCountry()
+  const countryStores = STORES_BY_COUNTRY[userCountry] || []
+  const intlStores = STORES_BY_COUNTRY.INTL || []
+
+  // Merge country stores with international stores (remove duplicates)
+  const allStores = [...countryStores, ...intlStores]
+  const uniqueStores = allStores.filter((store, index, self) =>
+    index === self.findIndex(s => s.name.toLowerCase() === store.name.toLowerCase())
+  )
+
+  return uniqueStores
+}
+
+/**
+ * Get all store names for user's country
+ */
+export function getCommonStores(country?: 'FR' | 'US' | 'INTL'): string[] {
+  return getStoresForCountry(country).map(store => store.name)
+}
+
+/**
+ * Store-specific color associations (generated from store data)
+ */
+function buildStoreColorsMap(): Record<string, string> {
+  const colorMap: Record<string, string> = {}
+
+  Object.values(STORES_BY_COUNTRY).forEach(stores => {
+    stores.forEach(store => {
+      colorMap[store.name.toLowerCase()] = store.color
+    })
+  })
+
+  return colorMap
+}
+
+export const STORE_COLORS = buildStoreColorsMap()
 
 /**
  * Auto-detect barcode format from data
@@ -85,7 +203,7 @@ export function detectBarcodeFormat(data: string): BarcodeFormat | null {
   if (/^[A-D][0-9\-$:/.+]+[A-D]$/.test(data)) return 'CODABAR'
 
   // CODE-39: uppercase alphanumeric with special chars
-  if (/^[0-9A-Z\-. $\/+%]+$/.test(data) && data.length <= 43) return 'CODE_39'
+  if (/^[0-9A-Z\-. $/+%]+$/.test(data) && data.length <= 43) return 'CODE_39'
 
   // Default to QR_CODE or CODE_128 for other patterns
   if (data.length > 80) return 'QR_CODE'
@@ -95,11 +213,13 @@ export function detectBarcodeFormat(data: string): BarcodeFormat | null {
 /**
  * Suggest store names based on partial input
  */
-export function suggestStoreNames(input: string): string[] {
+export function suggestStoreNames(input: string, country?: 'FR' | 'US' | 'INTL'): string[] {
   if (!input || input.length < 2) return []
 
   const lowerInput = input.toLowerCase()
-  return COMMON_STORES
+  const stores = getCommonStores(country)
+
+  return stores
     .filter(store => store.toLowerCase().includes(lowerInput))
     .slice(0, 5)
 }

@@ -81,3 +81,4 @@ export type Route =
   | { page: 'add' }
   | { page: 'settings' }
   | { page: 'setup' }
+  | { page: 'help' }
