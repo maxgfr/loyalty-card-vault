@@ -8,6 +8,7 @@ import { EditCardPage } from './components/cards/EditCardPage'
 import { BarcodeScanner } from './components/scanner/BarcodeScanner'
 import { SettingsPage } from './components/settings/SettingsPage'
 import { HelpPage } from './components/help/HelpPage'
+import { SyncPage } from './components/sync/SyncPage'
 import { ToastContainer } from './components/ui/Toast'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
@@ -21,6 +22,7 @@ function App() {
   const { cards, addCard, updateCard, deleteCard, refreshCards } = useCards()
   const { shareCard } = useShare()
   const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null)
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
 
   useEffect(() => {
@@ -29,7 +31,8 @@ function App() {
 
   const checkSetup = async () => {
     try {
-      await getSettings()
+      const settings = await getSettings()
+      setEncryptionEnabled(settings.useEncryption)
       setIsSetupComplete(true)
     } catch {
       setIsSetupComplete(false)
@@ -87,6 +90,11 @@ function App() {
     } catch (err) {
       addToast('Failed to delete card', 'error')
     }
+  }
+
+  const handleCardsUpdated = async () => {
+    await refreshCards()
+    addToast('Cards synced successfully')
   }
 
   if (isSetupComplete === null) {
@@ -159,6 +167,15 @@ function App() {
 
         {route.page === 'help' && (
           <HelpPage onBack={goBack} />
+        )}
+
+        {route.page === 'sync' && (
+          <SyncPage
+            onBack={goBack}
+            cards={cards}
+            encryptionEnabled={encryptionEnabled}
+            onCardsUpdated={handleCardsUpdated}
+          />
         )}
       </Layout>
 

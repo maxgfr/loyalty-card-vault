@@ -84,3 +84,4 @@ export type Route =
   | { page: 'settings' }
   | { page: 'setup' }
   | { page: 'help' }
+  | { page: 'sync' }

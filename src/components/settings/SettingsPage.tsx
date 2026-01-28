@@ -17,6 +17,10 @@ function navigateToHelp() {
   window.location.hash = '#help'
 }
 
+function navigateToSync() {
+  window.location.hash = '#sync'
+}
+
 export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [password, setPassword] = useState('')
@@ -133,6 +137,18 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             {message.text}
           </div>
         )}
+
+        <Card>
+          <h3 className="settings-section-title">Sync with Another Device</h3>
+          <p className="settings-section-description">
+            Synchronize your cards between devices using peer-to-peer connection (no server required)
+          </p>
+          <div className="settings-actions">
+            <Button variant="primary" onClick={navigateToSync} fullWidth>
+              🔄 Sync Devices
+            </Button>
+          </div>
+        </Card>
 
         <Card>
           <h3 className="settings-section-title">Aide & Installation</h3>
