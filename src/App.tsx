@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Layout } from './components/layout/Layout'
 import { SetupPage } from './components/setup/SetupPage'
 import { CardList } from './components/cards/CardList'
@@ -17,6 +17,8 @@ import { getSettings } from './lib/storage'
 import type { ScanResult, LoyaltyCard } from './types'
 import './App.css'
 
+let toastIdCounter = 0
+
 function App() {
   const { route, navigate, goBack } = useHashRouter()
   const { cards, addCard, updateCard, deleteCard, refreshCards } = useCards()
@@ -25,11 +27,7 @@ function App() {
   const [encryptionEnabled, setEncryptionEnabled] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
 
-  useEffect(() => {
-    checkSetup()
-  }, [])
-
-  const checkSetup = async () => {
+  const checkSetup = useCallback(async () => {
     try {
       const settings = await getSettings()
       setEncryptionEnabled(settings.useEncryption)
@@ -37,31 +35,35 @@ function App() {
     } catch {
       setIsSetupComplete(false)
     }
-  }
+  }, [])
 
-  const handleSetupComplete = () => {
+  useEffect(() => {
+    checkSetup()
+  }, [checkSetup])
+
+  const handleSetupComplete = useCallback(() => {
     setIsSetupComplete(true)
     navigate({ page: 'home' })
-  }
+  }, [navigate])
 
-  const addToast = (message: string, type: 'success' | 'error' = 'success') => {
-    const id = `${Date.now()}-${Math.random()}`
+  const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    const id = `toast-${toastIdCounter++}`
     setToasts(prev => [...prev, { id, message, type }])
-  }
+  }, [])
 
-  const removeToast = (id: string) => {
+  const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id))
-  }
+  }, [])
 
-  const handleScanResult = async (result: ScanResult) => {
+  const handleScanResult = useCallback(async (result: ScanResult) => {
     navigate({
       page: 'add',
       barcodeData: result.text,
       barcodeFormat: result.format
     })
-  }
+  }, [navigate])
 
-  const handleShare = async (cardId: string) => {
+  const handleShare = useCallback(async (cardId: string) => {
     const card = cards.find(c => c.id === cardId)
     if (!card) return
 
@@ -71,31 +73,31 @@ function App() {
     } else if (!result.cancelled) {
       addToast(result.error || 'Failed to share card', 'error')
     }
-  }
+  }, [cards, shareCard, addToast])
 
-  const handleUpdateCard = async (cardId: string, updates: Partial<Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>>) => {
+  const handleUpdateCard = useCallback(async (cardId: string, updates: Partial<Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>>) => {
     try {
       await updateCard(cardId, updates)
       addToast('Card updated successfully')
-    } catch (err) {
+    } catch {
       addToast('Failed to update card', 'error')
     }
-  }
+  }, [updateCard, addToast])
 
-  const handleDeleteCard = async (cardId: string) => {
+  const handleDeleteCard = useCallback(async (cardId: string) => {
     try {
       await deleteCard(cardId)
       addToast('Card deleted successfully')
       goBack()
-    } catch (err) {
+    } catch {
       addToast('Failed to delete card', 'error')
     }
-  }
+  }, [deleteCard, addToast, goBack])
 
-  const handleCardsUpdated = async () => {
+  const handleCardsUpdated = useCallback(async () => {
     await refreshCards()
     addToast('Cards synced successfully')
-  }
+  }, [refreshCards, addToast])
 
   if (isSetupComplete === null) {
     return (

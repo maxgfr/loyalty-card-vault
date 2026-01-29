@@ -41,7 +41,7 @@ export function SetupPage({ onComplete }: SetupPageProps) {
       })
 
       onComplete()
-    } catch (err) {
+    } catch {
       setError('Failed to save settings')
     }
   }

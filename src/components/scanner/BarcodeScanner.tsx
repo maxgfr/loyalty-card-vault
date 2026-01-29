@@ -76,15 +76,19 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
           </div>
         )}
 
-        {isScanning && (
-          <div className="scanner-view">
+        {hasPermission && (
+          <div className="scanner-view" style={{ display: isScanning ? 'block' : 'none' }}>
             <video ref={videoRef} className="scanner-video" playsInline />
-            <div className="scanner-overlay">
-              <div className="scanner-frame" />
-            </div>
-            <Button onClick={stopScanning} variant="secondary" className="scanner-stop">
-              Stop Scanning
-            </Button>
+            {isScanning && (
+              <>
+                <div className="scanner-overlay">
+                  <div className="scanner-frame" />
+                </div>
+                <Button onClick={stopScanning} variant="secondary" className="scanner-stop">
+                  Stop Scanning
+                </Button>
+              </>
+            )}
           </div>
         )}
 

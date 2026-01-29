@@ -76,6 +76,7 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         setFormData(prev => ({ ...prev, barcodeFormat: detectedFormat }))
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.barcodeData, initialData])
 
   // Real-time barcode validation
@@ -95,6 +96,7 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         }
       }
     }
+     
   }, [formData.barcodeData, formData.barcodeFormat])
 
   // Store name suggestions
@@ -105,6 +107,7 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
     } else {
       setStoreSuggestions([])
     }
+     
   }, [formData.storeName])
 
   // Auto-select color based on store name
@@ -118,6 +121,7 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         setFormData(prev => ({ ...prev, color: generatedColor }))
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.storeName, initialData])
 
   // Auto-suggest tags based on store name
@@ -130,6 +134,7 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         setTagSuggestions(allSuggestions)
       }
     }
+     
   }, [formData.storeName, initialData])
 
   const handleSubmit = (e: React.FormEvent) => {

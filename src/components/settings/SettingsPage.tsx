@@ -46,7 +46,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
       setMessage({ type: 'success', text: 'Backup exported successfully' })
       setShowPasswordModal(false)
       setPassword('')
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to export backup' })
     } finally {
       setIsExporting(false)
@@ -87,7 +87,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to import backup' })
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Failed to import backup' })
     } finally {
       if (fileInputRef.current) {

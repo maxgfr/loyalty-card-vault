@@ -44,12 +44,28 @@ export function useScanner() {
       }
 
       return true
-    } catch (err) {
+    } catch {
       setHasPermission(false)
       setError('Camera permission denied')
       return false
     }
   }, [])
+
+  // Define stopScanning first using a ref to avoid circular dependency issues
+  const stopScanningRef = useRef<() => void>(() => {})
+
+  const stopScanning = useCallback(() => {
+    if (scannerRef.current) {
+      scannerRef.current.stopScanning()
+      scannerRef.current = null
+    }
+    setIsScanning(false)
+  }, [])
+
+  // Update the ref whenever stopScanning changes
+  useEffect(() => {
+    stopScanningRef.current = stopScanning
+  }, [stopScanning])
 
   const startScanning = useCallback(async (videoRef: RefObject<HTMLVideoElement | null>, cameraId?: string) => {
     if (!videoRef.current) {
@@ -75,10 +91,10 @@ export function useScanner() {
             timestamp: Date.now(),
           }
           setLastResult(scanResult)
-          stopScanning()
+          stopScanningRef.current()
         },
-        (err) => {
-          setError(err.message)
+        (scanError) => {
+          setError(scanError.message)
         },
         deviceId
       )
@@ -87,14 +103,6 @@ export function useScanner() {
       setIsScanning(false)
     }
   }, [requestPermission, selectedCamera])
-
-  const stopScanning = useCallback(() => {
-    if (scannerRef.current) {
-      scannerRef.current.stopScanning()
-      scannerRef.current = null
-    }
-    setIsScanning(false)
-  }, [])
 
   return {
     isScanning,

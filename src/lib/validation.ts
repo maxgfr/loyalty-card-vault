@@ -29,11 +29,11 @@ export const barcodeDataValidators: Record<string, z.ZodString> = {
   EAN_13: z.string().regex(/^\d{13}$/, 'EAN-13 must be exactly 13 digits'),
   EAN_8: z.string().regex(/^\d{8}$/, 'EAN-8 must be exactly 8 digits'),
   CODE_128: z.string().min(1, 'CODE-128 cannot be empty').max(80, 'CODE-128 too long'),
-  CODE_39: z.string().regex(/^[0-9A-Z\-\.\ \$\/\+\%]+$/, 'CODE-39 contains invalid characters').max(43, 'CODE-39 too long'),
+  CODE_39: z.string().regex(/^[0-9A-Z\-. $/+%%]+$/, 'CODE-39 contains invalid characters').max(43, 'CODE-39 too long'),
   UPC_A: z.string().regex(/^\d{12}$/, 'UPC-A must be exactly 12 digits'),
   UPC_E: z.string().regex(/^\d{8}$/, 'UPC-E must be exactly 8 digits'),
   ITF: z.string().regex(/^\d+$/, 'ITF must contain only digits').refine(data => data.length % 2 === 0, 'ITF must have even number of digits'),
-  CODABAR: z.string().regex(/^[A-D][0-9\-\$\:\/\.\+]+[A-D]$/, 'CODABAR must start and end with A-D'),
+  CODABAR: z.string().regex(/^[A-D][0-9\-$.:/.+]+[A-D]$/, 'CODABAR must start and end with A-D'),
   DATA_MATRIX: z.string().min(1, 'Data Matrix cannot be empty').max(2335, 'Data Matrix too long'),
 }
 

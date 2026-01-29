@@ -42,6 +42,7 @@ export function useCards(): UseCardsReturn {
 
   useEffect(() => {
     loadCards()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const unlockVault = useCallback(async (pwd: string): Promise<boolean> => {

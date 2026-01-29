@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Route } from '../types'
+import type { Route, BarcodeFormat } from '../types'
 
 /**
  * Parse the current hash to a Route object
@@ -26,7 +26,7 @@ function parseHash(hash: string): Route {
       return { page: 'scan' }
     case 'add': {
       const barcodeData = queryParams.get('barcodeData') || undefined
-      const barcodeFormat = queryParams.get('barcodeFormat') as any || undefined
+      const barcodeFormat = queryParams.get('barcodeFormat') as BarcodeFormat || undefined
       return { page: 'add', barcodeData, barcodeFormat }
     }
     case 'edit':

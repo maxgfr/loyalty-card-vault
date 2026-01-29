@@ -86,7 +86,7 @@ export async function exportCardAsImage(card: LoyaltyCard): Promise<void> {
 
       // Draw barcode
       ctx.drawImage(barcodeCanvas, barcodeX, barcodeY)
-    } catch (error) {
+    } catch {
       // If barcode generation fails, just show the text
       ctx.fillStyle = '#FFFFFF'
       ctx.font = '20px monospace'

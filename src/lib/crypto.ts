@@ -119,7 +119,7 @@ export async function decrypt(payload: EncryptedPayload, password: string): Prom
     )
 
     return decoder.decode(decryptedBuffer)
-  } catch (error) {
+  } catch {
     throw new Error('Decryption failed. Wrong password or corrupted data.')
   }
 }
