@@ -115,3 +115,38 @@
 .store-suggestion-item:last-child {
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
+
+.barcode-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.barcode-preview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.barcode-preview-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-style: italic;
+}

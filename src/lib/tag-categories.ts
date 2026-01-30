@@ -4,26 +4,26 @@
 
 export const TAG_CATEGORIES = {
   FR: [
-    'Supermarché',
-    'Alimentation',
-    'Mode',
-    'Beauté',
-    'Sport',
-    'Bricolage',
-    'Maison',
-    'Électronique',
-    'Multimédia',
+    'Supermarket',
+    'Food',
+    'Fashion',
+    'Beauty',
+    'Sports',
+    'Hardware',
+    'Home',
+    'Electronics',
+    'Media',
     'Restaurant',
-    'Fast-food',
-    'Café',
-    'Carburant',
-    'Pharmacie',
-    'Santé',
-    'Loisirs',
+    'Fast Food',
+    'Coffee',
+    'Gas Station',
+    'Pharmacy',
+    'Health',
+    'Entertainment',
     'Culture',
-    'Livres',
-    'Jouets',
-    'Animaux',
+    'Books',
+    'Toys',
+    'Pets',
   ],
   US: [
     'Grocery',
@@ -92,40 +92,40 @@ export function suggestTagsForStore(storeName: string): string[] {
 
   // French store categories
   if (/carrefour|auchan|leclerc|intermarch|casino|monoprix|franprix|lidl|biocoop/i.test(storeName)) {
-    suggestions.push('Supermarché', 'Alimentation')
+    suggestions.push('Supermarket', 'Food')
   }
   if (/mcdonald|quick|kfc|subway|burger king/i.test(storeName)) {
-    suggestions.push('Restaurant', 'Fast-food')
+    suggestions.push('Restaurant', 'Fast Food')
   }
   if (/starbucks|paul|caf/i.test(storeName)) {
-    suggestions.push('Café')
+    suggestions.push('Coffee')
   }
   if (/sephora|nocib|marionnaud/i.test(storeName)) {
-    suggestions.push('Beauté')
+    suggestions.push('Beauty')
   }
   if (/h&m|zara|kiabi/i.test(storeName)) {
-    suggestions.push('Mode')
+    suggestions.push('Fashion')
   }
   if (/d[ée]cathlon|go sport/i.test(storeName)) {
-    suggestions.push('Sport')
+    suggestions.push('Sports')
   }
   if (/fnac|darty|boulanger|micromania/i.test(storeName)) {
-    suggestions.push('Électronique', 'Multimédia')
+    suggestions.push('Electronics', 'Media')
   }
   if (/leroy merlin|castorama|bricomarch/i.test(storeName)) {
-    suggestions.push('Bricolage', 'Maison')
+    suggestions.push('Hardware', 'Home')
   }
   if (/ikea|but|conforama/i.test(storeName)) {
-    suggestions.push('Maison')
+    suggestions.push('Home')
   }
   if (/pharmacie|parapharmacie/i.test(storeName)) {
-    suggestions.push('Pharmacie', 'Santé')
+    suggestions.push('Pharmacy', 'Health')
   }
   if (/total|bp|esso|shell/i.test(storeName)) {
-    suggestions.push('Carburant')
+    suggestions.push('Gas Station')
   }
   if (/cultura|nature.*d[ée]couvertes/i.test(storeName)) {
-    suggestions.push('Culture', 'Loisirs')
+    suggestions.push('Culture', 'Entertainment')
   }
 
   // US store categories

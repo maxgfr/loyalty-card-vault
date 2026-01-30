@@ -13,7 +13,7 @@ interface StoreData {
  */
 const STORES_BY_COUNTRY: Record<string, StoreData[]> = {
   FR: [
-    // Supermarchés
+    // Supermarkets
     { name: 'Carrefour', color: '#005AA9' },
     { name: 'Auchan', color: '#ED1C24' },
     { name: 'Leclerc', color: '#005CAB' },
@@ -34,7 +34,7 @@ const STORES_BY_COUNTRY: Record<string, StoreData[]> = {
     { name: 'Paul', color: '#8B4513' },
     { name: 'Starbucks', color: '#00704A' },
 
-    // Mode & Beauté
+    // Fashion & Beauty
     { name: 'Sephora', color: '#000000' },
     { name: 'Nocibé', color: '#E30613' },
     { name: 'Marionnaud', color: '#E4002B' },
@@ -44,13 +44,13 @@ const STORES_BY_COUNTRY: Record<string, StoreData[]> = {
     { name: 'Go Sport', color: '#ED1C24' },
     { name: 'Kiabi', color: '#E30613' },
 
-    // Multimédia & Électronique
+    // Media & Electronics
     { name: 'Fnac', color: '#F39200' },
     { name: 'Darty', color: '#E30613' },
     { name: 'Boulanger', color: '#E30613' },
     { name: 'Micromania', color: '#ED1C24' },
 
-    // Bricolage & Maison
+    // Hardware & Home
     { name: 'Leroy Merlin', color: '#78BE20' },
     { name: 'Castorama', color: '#0072BB' },
     { name: 'Bricomarché', color: '#E30613' },
@@ -58,17 +58,17 @@ const STORES_BY_COUNTRY: Record<string, StoreData[]> = {
     { name: 'BUT', color: '#E30613' },
     { name: 'Conforama', color: '#E30613' },
 
-    // Pharmacie & Santé
+    // Pharmacy & Health
     { name: 'Pharmacie', color: '#00A650' },
     { name: 'Parapharmacie Leclerc', color: '#005CAB' },
 
-    // Carburant
+    // Gas Stations
     { name: 'Total', color: '#EE3124' },
     { name: 'BP', color: '#008A00' },
     { name: 'Esso', color: '#E31937' },
     { name: 'Shell', color: '#FFD100' },
 
-    // Autres
+    // Other
     { name: 'Nature & Découvertes', color: '#6BB43F' },
     { name: 'Cultura', color: '#F39200' },
     { name: 'Action', color: '#E30613' },
@@ -108,7 +108,7 @@ const STORES_BY_COUNTRY: Record<string, StoreData[]> = {
     { name: 'Southwest', color: '#F9B612' },
   ],
 
-  // Magasins internationaux
+  // International stores
   INTL: [
     { name: 'Apple Store', color: '#000000' },
     { name: 'Nike', color: '#111111' },

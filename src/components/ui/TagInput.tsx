@@ -26,6 +26,9 @@ export function TagInput({
     s => s.toLowerCase().includes(input.toLowerCase()) && !value.includes(s)
   )
 
+  // Popular suggestions to show when field is empty
+  const popularSuggestions = suggestions.filter(s => !value.includes(s)).slice(0, 8)
+
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim()
     if (!trimmedTag) return
@@ -107,6 +110,24 @@ export function TagInput({
 
       {value.length >= maxTags && (
         <p className="tag-input-limit">Maximum {maxTags} tags reached</p>
+      )}
+
+      {!showSuggestions && popularSuggestions.length > 0 && value.length < maxTags && (
+        <div className="tag-popular-suggestions">
+          <span className="tag-popular-label">Popular:</span>
+          <div className="tag-popular-items">
+            {popularSuggestions.map(suggestion => (
+              <button
+                key={suggestion}
+                type="button"
+                className="tag-popular-item"
+                onClick={() => addTag(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )

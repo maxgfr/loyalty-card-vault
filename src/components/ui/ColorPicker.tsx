@@ -29,6 +29,15 @@ const DEFAULT_PRESET_COLORS = [
   '#78716c', // Stone
 ]
 
+// Group colors by category
+const COLOR_GROUPS = [
+  { name: 'Vibrant', colors: ['#6366f1', '#ec4899', '#8b5cf6', '#a855f7', '#d946ef'] },
+  { name: 'Warm', colors: ['#ef4444', '#f97316', '#f59e0b', '#eab308'] },
+  { name: 'Cool', colors: ['#3b82f6', '#0ea5e9', '#06b6d4', '#14b8a6'] },
+  { name: 'Nature', colors: ['#10b981', '#22c55e', '#84cc16'] },
+  { name: 'Neutral', colors: ['#64748b', '#78716c'] },
+]
+
 export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COLORS, label }: ColorPickerProps) {
   const [showCustom, setShowCustom] = useState(false)
 
@@ -41,21 +50,60 @@ export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COL
     onChange(e.target.value)
   }
 
+  // Group preset colors if they match default groups
+  const useGroupedLayout = presetColors === DEFAULT_PRESET_COLORS
+
   return (
     <div className="color-picker">
       {label && <label className="color-picker-label">{label}</label>}
 
-      <div className="color-picker-presets">
-        {presetColors.map(color => (
-          <button
-            key={color}
-            type="button"
-            className={`color-preset ${value.toLowerCase() === color.toLowerCase() ? 'color-preset--active' : ''}`}
-            style={{ backgroundColor: color }}
-            onClick={() => handlePresetClick(color)}
-            title={color}
-          />
-        ))}
+      <div className="color-picker-container">
+        {useGroupedLayout ? (
+          <div className="color-picker-grouped">
+            {COLOR_GROUPS.map(group => (
+              <div key={group.name} className="color-group">
+                <span className="color-group-name">{group.name}</span>
+                <div className="color-group-items">
+                  {group.colors.map(color => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={`color-preset ${value.toLowerCase() === color.toLowerCase() ? 'color-preset--active' : ''}`}
+                      style={{ backgroundColor: color }}
+                      onClick={() => handlePresetClick(color)}
+                      title={color}
+                    >
+                      {value.toLowerCase() === color.toLowerCase() && (
+                        <svg className="color-preset-check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <path d="M16 6L8 14L4 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="color-picker-presets">
+            {presetColors.map(color => (
+              <button
+                key={color}
+                type="button"
+                className={`color-preset ${value.toLowerCase() === color.toLowerCase() ? 'color-preset--active' : ''}`}
+                style={{ backgroundColor: color }}
+                onClick={() => handlePresetClick(color)}
+                title={color}
+              >
+                {value.toLowerCase() === color.toLowerCase() && (
+                  <svg className="color-preset-check" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M16 6L8 14L4 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
 
         <button
           type="button"
@@ -63,8 +111,8 @@ export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COL
           onClick={() => setShowCustom(!showCustom)}
           title="Custom color"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 2V14M2 8H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
           </svg>
         </button>
       </div>
@@ -88,8 +136,10 @@ export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COL
         </div>
       )}
 
-      <div className="color-picker-preview" style={{ backgroundColor: value }}>
-        <span className="color-picker-preview-text">{value}</span>
+      <div className="color-picker-preview">
+        <div className="color-picker-preview-gradient" style={{ background: `linear-gradient(135deg, ${value} 0%, ${value}dd 100%)` }}>
+          <span className="color-picker-preview-text">{value.toUpperCase()}</span>
+        </div>
       </div>
     </div>
   )

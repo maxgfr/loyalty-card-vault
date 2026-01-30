@@ -8,7 +8,7 @@ import { EditCardPage } from './components/cards/EditCardPage'
 import { BarcodeScanner } from './components/scanner/BarcodeScanner'
 import { SettingsPage } from './components/settings/SettingsPage'
 import { HelpPage } from './components/help/HelpPage'
-import { SyncPage } from './components/sync/SyncPage'
+import { SimpleSyncPage } from './components/sync/SimpleSyncPage'
 import { ToastContainer } from './components/ui/Toast'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
@@ -94,7 +94,8 @@ function App() {
     }
   }, [deleteCard, addToast, goBack])
 
-  const handleCardsUpdated = useCallback(async () => {
+  const handleCardsUpdated = useCallback(async (_updatedCards: LoyaltyCard[]) => {
+    // Cards are already saved by the sync process, just refresh
     await refreshCards()
     addToast('Cards synced successfully')
   }, [refreshCards, addToast])
@@ -172,7 +173,7 @@ function App() {
         )}
 
         {route.page === 'sync' && (
-          <SyncPage
+          <SimpleSyncPage
             onBack={goBack}
             cards={cards}
             encryptionEnabled={encryptionEnabled}

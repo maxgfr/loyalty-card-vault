@@ -1,65 +1,176 @@
 .card-item {
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  pointer-events: none;
 }
 
 .card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  border-color: transparent;
+}
+
+.card-item:hover::before {
+  opacity: 1;
+}
+
+.card-item:active {
   transform: translateY(-2px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-item-color-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  opacity: 0.9;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-item:hover .card-item-color-accent {
+  width: 100%;
+  opacity: 0.08;
 }
 
 .card-item-content {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: var(--space-md);
+  z-index: 1;
+}
+
+.card-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.card-item-color-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-item:hover .card-item-color-badge {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.card-item-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .card-item-name {
   font-size: 1.125rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text);
+  margin-bottom: var(--space-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-item-store {
   font-size: 0.875rem;
   color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
 }
 
 .card-item-format {
-  display: inline-block;
-  padding: var(--space-xs) var(--space-sm);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
   background: var(--color-surface-hover);
   color: var(--color-text-muted);
   font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
-  width: fit-content;
+  font-weight: 600;
+  border-radius: var(--radius-full);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--color-border);
 }
 
 .card-item-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
-  margin-top: var(--space-xs);
+  align-items: center;
 }
 
 .card-item-tag {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: var(--space-xs) var(--space-sm);
-  background: var(--color-primary);
-  color: white;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: var(--radius-sm);
+  border: 1px solid currentColor;
+  transition: all var(--transition-fast);
+}
+
+.card-item-tag:hover {
+  transform: scale(1.05);
 }
 
 .card-item-tag-more {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: var(--space-xs) var(--space-sm);
   background: var(--color-surface-hover);
   color: var(--color-text-muted);
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 768px) {
+  .card-item-color-badge {
+    width: 40px;
+    height: 40px;
+  }
+
+  .card-item-name {
+    font-size: 1rem;
+  }
+
+  .card-item-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

@@ -4,6 +4,8 @@ import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { ColorPicker } from '../ui/ColorPicker'
 import { TagInput } from '../ui/TagInput'
+import { CardBarcode } from './CardBarcode'
+import { Card } from '../ui/Card'
 import { validateCard, barcodeDataValidators } from '../../lib/validation'
 import { detectBarcodeFormat, suggestStoreNames, getStoreColor, generateColorFromString, STORE_COLORS } from '../../lib/smart-detection'
 import { getTagSuggestions, suggestTagsForStore } from '../../lib/tag-categories'
@@ -250,6 +252,20 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
           maxLength={500}
         />
       </div>
+
+      {formData.barcodeData && !errors.barcodeData && (
+        <div className="barcode-preview-section">
+          <label className="form-label">Barcode Preview</label>
+          <Card className="barcode-preview-card">
+            <CardBarcode
+              data={formData.barcodeData}
+              format={formData.barcodeFormat}
+              scale={2}
+            />
+            <p className="barcode-preview-hint">Preview of how your barcode will look</p>
+          </Card>
+        </div>
+      )}
 
       {errors.form && <p className="form-error">{errors.form}</p>}
 

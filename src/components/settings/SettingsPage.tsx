@@ -151,13 +151,13 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         </Card>
 
         <Card>
-          <h3 className="settings-section-title">Aide & Installation</h3>
+          <h3 className="settings-section-title">Help & Installation</h3>
           <p className="settings-section-description">
-            Comment installer l'app, scanner des cartes, et plus encore
+            How to install the app, scan cards, and more
           </p>
           <div className="settings-actions">
             <Button variant="primary" onClick={navigateToHelp} fullWidth>
-              📱 Voir le guide d'aide
+              📱 View Help Guide
             </Button>
           </div>
         </Card>

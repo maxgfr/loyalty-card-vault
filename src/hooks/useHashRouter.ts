@@ -37,6 +37,8 @@ function parseHash(hash: string): Route {
       return { page: 'setup' }
     case 'help':
       return { page: 'help' }
+    case 'sync':
+      return { page: 'sync' }
     default:
       return { page: 'home' }
   }
@@ -68,6 +70,8 @@ function routeToHash(route: Route): string {
       return '#/setup'
     case 'help':
       return '#/help'
+    case 'sync':
+      return '#/sync'
     default:
       return '#/'
   }
