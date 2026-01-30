@@ -102,10 +102,25 @@
   cursor: pointer;
   color: var(--color-text);
   transition: background var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
 }
 
-.store-suggestion-item:hover {
+.store-suggestion-item:hover,
+.store-suggestion-item--selected {
   background: var(--color-surface-hover);
+}
+
+.store-suggestion-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.store-suggestion-tags {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .store-suggestion-item:first-child {

@@ -233,6 +233,36 @@
   letter-spacing: 0.05em;
 }
 
+/* Compact mode for smaller ColorPicker */
+.color-picker--compact .color-picker-container {
+  padding: var(--space-md);
+  gap: var(--space-sm);
+}
+
+.color-picker--compact .color-preset {
+  width: 36px;
+  height: 36px;
+  border-width: 2px;
+}
+
+.color-picker--compact .color-group-name {
+  font-size: 0.7rem;
+}
+
+.color-picker--compact .color-group-items {
+  gap: var(--space-xs);
+}
+
+.color-picker--compact .color-picker-preview-gradient {
+  min-height: 60px;
+  padding: var(--space-md);
+}
+
+.color-picker--compact .color-picker-preview-text {
+  font-size: 0.875rem;
+  padding: var(--space-xs) var(--space-md);
+}
+
 @media (max-width: 768px) {
   .color-picker-container {
     padding: var(--space-md);

@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Header } from '../layout/Header'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { Input } from '../ui/Input'
 import { exportBackup, importBackup, downloadBackup } from '../../lib/backup'
-import { isEncryptionEnabled } from '../../lib/storage'
+import { isEncryptionEnabled, saveSettings } from '../../lib/storage'
 import './SettingsPage.css'
 
 interface SettingsPageProps {
@@ -26,7 +26,18 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [password, setPassword] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
+  const [showEncryptionModal, setShowEncryptionModal] = useState(false)
+  const [pendingEncryptionChange, setPendingEncryptionChange] = useState<boolean | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const loadEncryptionStatus = async () => {
+      const enabled = await isEncryptionEnabled()
+      setEncryptionEnabled(enabled)
+    }
+    loadEncryptionStatus()
+  }, [])
 
   const handleExport = async () => {
     const encrypted = await isEncryptionEnabled()
@@ -105,11 +116,67 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     }
   }
 
+  const handleToggleEncryption = () => {
+    setPendingEncryptionChange(!encryptionEnabled)
+    setShowEncryptionModal(true)
+  }
+
+  const confirmEncryptionChange = async () => {
+    if (pendingEncryptionChange === null) return
+
+    try {
+      await saveSettings({
+        useEncryption: pendingEncryptionChange,
+        theme: 'auto',
+        defaultBarcodeFormat: 'QR_CODE',
+      })
+      setEncryptionEnabled(pendingEncryptionChange)
+      setMessage({
+        type: 'success',
+        text: `Encryption ${pendingEncryptionChange ? 'enabled' : 'disabled'} successfully. ${
+          pendingEncryptionChange
+            ? 'New cards will be encrypted.'
+            : 'New cards will be stored without encryption.'
+        }`,
+      })
+      setShowEncryptionModal(false)
+      setPendingEncryptionChange(null)
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to update encryption settings' })
+    }
+  }
+
   return (
     <div className="settings-page">
       <Header title="Settings" onBack={onBack} />
 
       <div className="settings-content">
+        <Card>
+          <h3 className="settings-section-title">🔐 Encryption</h3>
+          <p className="settings-section-description">
+            {encryptionEnabled
+              ? 'Your cards are encrypted with a password for extra security.'
+              : 'Your cards are stored without encryption. Enable for better security.'}
+          </p>
+          <div className="encryption-status">
+            <div className="encryption-status-badge">
+              <span className={`encryption-status-indicator ${encryptionEnabled ? 'encryption-status-indicator--enabled' : ''}`} />
+              <span className="encryption-status-text">
+                {encryptionEnabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+          <div className="settings-actions">
+            <Button
+              variant={encryptionEnabled ? 'secondary' : 'primary'}
+              onClick={handleToggleEncryption}
+              fullWidth
+            >
+              {encryptionEnabled ? '🔓 Disable Encryption' : '🔒 Enable Encryption'}
+            </Button>
+          </div>
+        </Card>
+
         <Card>
           <h3 className="settings-section-title">Backup & Restore</h3>
           <p className="settings-section-description">
@@ -196,6 +263,56 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           fullWidth
           autoFocus
         />
+      </Modal>
+
+      <Modal
+        isOpen={showEncryptionModal}
+        onClose={() => {
+          setShowEncryptionModal(false)
+          setPendingEncryptionChange(null)
+        }}
+        title={pendingEncryptionChange ? 'Enable Encryption?' : 'Disable Encryption?'}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowEncryptionModal(false)
+                setPendingEncryptionChange(null)
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={confirmEncryptionChange}>
+              {pendingEncryptionChange ? 'Enable' : 'Disable'}
+            </Button>
+          </>
+        }
+      >
+        <div className="encryption-modal-content">
+          {pendingEncryptionChange ? (
+            <>
+              <p>
+                <strong>⚠️ Important:</strong> After enabling encryption, you'll need to set a
+                password when adding or accessing cards.
+              </p>
+              <p>
+                Existing unencrypted cards will remain accessible, but new cards will be
+                encrypted.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                <strong>⚠️ Warning:</strong> Disabling encryption means new cards will be stored
+                without password protection.
+              </p>
+              <p>
+                Existing encrypted cards will remain encrypted and require a password to access.
+              </p>
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   )

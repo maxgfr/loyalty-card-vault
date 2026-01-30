@@ -1,80 +1,515 @@
 .card-detail {
   min-height: 100vh;
+  background: var(--color-background);
 }
 
 .card-detail-content {
-  padding: var(--space-lg);
+  padding: var(--space-xl);
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Card container with 3D perspective */
+.card-detail-card-container {
+  perspective: 2000px;
+  width: 100%;
   max-width: 600px;
   margin: 0 auto;
 }
 
-.card-detail-info {
+.card-detail-card-flip {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.586; /* Standard credit card ratio */
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.card-detail-card-flip--flipped {
+  transform: rotateY(180deg);
+}
+
+/* Card faces */
+.card-detail-card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  padding: var(--space-xl);
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--card-color) 0%, var(--card-color-dark) 100%);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.card-detail-card-back {
+  transform: rotateY(180deg);
+}
+
+/* Background patterns */
+.card-detail-card-bg-pattern {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 15px,
+      rgba(255, 255, 255, 0.03) 15px,
+      rgba(255, 255, 255, 0.03) 30px
+    );
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.card-detail-card-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.card-detail-card-shine {
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(45deg);
+  animation: cardShine 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes cardShine {
+  0%, 100% {
+    left: -100%;
+  }
+  50% {
+    left: 150%;
+  }
+}
+
+/* Chip */
+.card-detail-chip {
+  position: absolute;
+  top: var(--space-xl);
+  left: var(--space-xl);
+  width: 56px;
+  height: 44px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15));
+  border-radius: 8px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.card-detail-chip-line {
+  height: 3px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
+  border-radius: 2px;
+}
+
+/* Content */
+.card-detail-card-content {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 1;
+  color: white;
+}
+
+/* Header */
+.card-detail-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.card-detail-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.card-detail-logo-text {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.card-detail-type {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.card-detail-type-text {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Main info */
+.card-detail-card-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: var(--space-sm);
 }
 
-.card-detail-store {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text);
+.card-detail-card-name {
+  font-size: 2rem;
+  font-weight: 900;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.card-detail-format {
-  color: var(--color-text-muted);
-  font-size: 0.875rem;
+.card-detail-card-store {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Card number */
+.card-detail-card-number {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  font-family: 'Courier New', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.15em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: var(--space-md);
+}
+
+.card-detail-number-dots {
+  opacity: 0.8;
+}
+
+.card-detail-number-last {
+  font-weight: 900;
+}
+
+/* Footer */
+.card-detail-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.card-detail-card-meta {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.card-detail-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-detail-meta-label {
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.card-detail-meta-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Back of card */
+.card-detail-mag-stripe {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 50%, #1a1a1a 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.card-detail-barcode-section {
+  position: absolute;
+  top: 140px;
+  left: var(--space-xl);
+  right: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card-detail-barcode-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+
+.card-detail-barcode-data {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  word-break: break-all;
+  text-align: center;
+}
+
+.card-detail-notes-section {
+  position: absolute;
+  bottom: var(--space-xl);
+  left: var(--space-xl);
+  right: var(--space-xl);
+  padding: var(--space-md);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.card-detail-notes {
+  font-size: 0.875rem;
+  color: white;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  line-height: 1.5;
+}
+
+/* Flip hint */
+.card-detail-flip-hint {
+  position: absolute;
+  bottom: var(--space-sm);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  animation: flipHintPulse 2s ease-in-out infinite;
+}
+
+@keyframes flipHintPulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Tags section */
+.card-detail-tags-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.card-detail-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
 }
 
 .card-detail-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
+  gap: var(--space-sm);
 }
 
 .card-detail-tag {
-  display: inline-block;
-  padding: var(--space-xs) var(--space-md);
-  background: var(--color-primary);
-  color: white;
+  padding: var(--space-sm) var(--space-md);
   font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 2px solid currentColor;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-detail-notes {
-  margin-top: var(--space-sm);
-  padding-top: var(--space-sm);
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-muted);
-  font-size: 0.875rem;
+.card-detail-tag:hover {
+  transform: scale(1.05);
+  background: currentColor;
+  color: white !important;
 }
 
-.card-detail-barcode-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-
-.card-detail-barcode-data {
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 1.125rem;
-  color: var(--color-text-muted);
-  word-break: break-all;
-}
-
+/* Actions */
 .card-detail-actions {
   display: flex;
   gap: var(--space-md);
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .card-detail-content {
+    padding: var(--space-lg);
+  }
+
+  .card-detail-card-face {
+    padding: var(--space-lg);
+  }
+
+  .card-detail-chip {
+    width: 48px;
+    height: 38px;
+    top: var(--space-lg);
+    left: var(--space-lg);
+  }
+
+  .card-detail-logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .card-detail-logo-text {
+    font-size: 1.5rem;
+  }
+
+  .card-detail-card-name {
+    font-size: 1.5rem;
+  }
+
+  .card-detail-card-store {
+    font-size: 1rem;
+  }
+
+  .card-detail-card-number {
+    font-size: 1rem;
+    gap: var(--space-sm);
+  }
+
+  .card-detail-barcode-section {
+    top: 120px;
+    left: var(--space-lg);
+    right: var(--space-lg);
     padding: var(--space-md);
+  }
+
+  .card-detail-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-detail-content {
+    padding: var(--space-md);
+  }
+
+  .card-detail-card-face {
+    padding: var(--space-md);
+  }
+
+  .card-detail-chip {
+    width: 44px;
+    height: 34px;
+    top: var(--space-md);
+    left: var(--space-md);
+  }
+
+  .card-detail-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .card-detail-card-name {
+    font-size: 1.25rem;
+  }
+
+  .card-detail-card-number {
+    font-size: 0.875rem;
+  }
+
+  .card-detail-card-meta {
+    gap: var(--space-md);
+  }
+
+  .card-detail-meta-label {
+    font-size: 0.65rem;
+  }
+
+  .card-detail-meta-value {
+    font-size: 0.75rem;
+  }
+
+  .card-detail-barcode-section {
+    top: 100px;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .card-detail-card-face {
+    box-shadow:
+      0 10px 40px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   }
 }

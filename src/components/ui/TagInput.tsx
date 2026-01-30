@@ -20,6 +20,7 @@ export function TagInput({
 }: TagInputProps) {
   const [input, setInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const filteredSuggestions = suggestions.filter(
@@ -38,6 +39,7 @@ export function TagInput({
     onChange([...value, trimmedTag])
     setInput('')
     setShowSuggestions(false)
+    setSelectedSuggestionIndex(-1)
   }
 
   const removeTag = (tagToRemove: string) => {
@@ -45,9 +47,35 @@ export function TagInput({
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && input) {
+    // Handle suggestions navigation
+    if (showSuggestions && filteredSuggestions.length > 0) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault()
+          setSelectedSuggestionIndex(prev =>
+            prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+          )
+          return
+        case 'ArrowUp':
+          e.preventDefault()
+          setSelectedSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1))
+          return
+        case 'Escape':
+          e.preventDefault()
+          setShowSuggestions(false)
+          setSelectedSuggestionIndex(-1)
+          return
+      }
+    }
+
+    // Handle Enter key
+    if (e.key === 'Enter') {
       e.preventDefault()
-      addTag(input)
+      if (selectedSuggestionIndex >= 0 && filteredSuggestions[selectedSuggestionIndex]) {
+        addTag(filteredSuggestions[selectedSuggestionIndex])
+      } else if (input) {
+        addTag(input)
+      }
     } else if (e.key === 'Backspace' && !input && value.length > 0) {
       removeTag(value[value.length - 1])
     }
@@ -82,10 +110,14 @@ export function TagInput({
               onChange={(e) => {
                 setInput(e.target.value)
                 setShowSuggestions(true)
+                setSelectedSuggestionIndex(-1)
               }}
               onKeyDown={handleKeyDown}
               onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              onBlur={() => setTimeout(() => {
+                setShowSuggestions(false)
+                setSelectedSuggestionIndex(-1)
+              }, 200)}
               placeholder={value.length === 0 ? placeholder : ''}
               maxLength={30}
             />
@@ -94,11 +126,13 @@ export function TagInput({
 
         {showSuggestions && filteredSuggestions.length > 0 && (
           <div className="tag-suggestions">
-            {filteredSuggestions.slice(0, 5).map(suggestion => (
+            {filteredSuggestions.map((suggestion, index) => (
               <button
                 key={suggestion}
                 type="button"
-                className="tag-suggestion-item"
+                className={`tag-suggestion-item ${
+                  index === selectedSuggestionIndex ? 'tag-suggestion-item--selected' : ''
+                }`}
                 onClick={() => addTag(suggestion)}
               >
                 {suggestion}

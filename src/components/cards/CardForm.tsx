@@ -7,8 +7,9 @@ import { TagInput } from '../ui/TagInput'
 import { CardBarcode } from './CardBarcode'
 import { Card } from '../ui/Card'
 import { validateCard, barcodeDataValidators } from '../../lib/validation'
-import { detectBarcodeFormat, suggestStoreNames, getStoreColor, generateColorFromString, STORE_COLORS } from '../../lib/smart-detection'
+import { detectBarcodeFormat, generateColorFromString } from '../../lib/smart-detection'
 import { getTagSuggestions, suggestTagsForStore } from '../../lib/tag-categories'
+import { suggestStores, findStoreByName, getPresetColors, type StoreConfig } from '../../lib/stores'
 import { z } from 'zod'
 import './CardForm.css'
 
@@ -31,27 +32,6 @@ const BARCODE_FORMATS: BarcodeFormat[] = [
   'DATA_MATRIX',
 ]
 
-// Get unique colors from stores
-const getPresetColors = (): string[] => {
-  const uniqueColors = new Set<string>()
-
-  // Add store brand colors
-  Object.values(STORE_COLORS).forEach(color => {
-    if (color) uniqueColors.add(color.toUpperCase())
-  })
-
-  // Add some default colors if not enough store colors
-  const defaultColors = [
-    '#6366F1', '#8B5CF6', '#EC4899', '#EF4444',
-    '#F59E0B', '#10B981', '#06B6D4', '#3B82F6',
-    '#14B8A6', '#F97316', '#84CC16', '#A855F7'
-  ]
-
-  defaultColors.forEach(color => uniqueColors.add(color))
-
-  return Array.from(uniqueColors).slice(0, 24) // Limit to 24 colors
-}
-
 const PRESET_COLORS = getPresetColors()
 
 export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
@@ -66,9 +46,11 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [storeSuggestions, setStoreSuggestions] = useState<string[]>([])
+  const [storeSuggestions, setStoreSuggestions] = useState<StoreConfig[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
   const [tagSuggestions, setTagSuggestions] = useState<string[]>(getTagSuggestions())
+  const [hasAutoFilledStore, setHasAutoFilledStore] = useState(false)
 
   // Auto-detect barcode format
   useEffect(() => {
@@ -101,43 +83,93 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
      
   }, [formData.barcodeData, formData.barcodeFormat])
 
-  // Store name suggestions
+  // Store name suggestions (based on unified name field)
   useEffect(() => {
-    if (formData.storeName) {
-      const suggestions = suggestStoreNames(formData.storeName)
+    if (formData.name && formData.name.length >= 2) {
+      const suggestions = suggestStores(formData.name)
       setStoreSuggestions(suggestions)
+      setSelectedSuggestionIndex(-1)
     } else {
       setStoreSuggestions([])
+      setSelectedSuggestionIndex(-1)
     }
-     
-  }, [formData.storeName])
+  }, [formData.name])
 
-  // Auto-select color based on store name
+  // Auto-select color based on card name
   useEffect(() => {
-    if (formData.storeName && !initialData) {
-      const storeColor = getStoreColor(formData.storeName)
-      if (storeColor && storeColor !== formData.color) {
-        setFormData(prev => ({ ...prev, color: storeColor }))
-      } else if (!storeColor && formData.storeName.length > 2) {
-        const generatedColor = generateColorFromString(formData.storeName)
+    if (formData.name && !initialData && !hasAutoFilledStore) {
+      const store = findStoreByName(formData.name)
+      if (store && store.color && store.color !== formData.color) {
+        setFormData(prev => ({ ...prev, color: store.color }))
+      } else if (!store && formData.name.length > 2) {
+        const generatedColor = generateColorFromString(formData.name)
         setFormData(prev => ({ ...prev, color: generatedColor }))
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.storeName, initialData])
+  }, [formData.name, initialData, hasAutoFilledStore])
 
-  // Auto-suggest tags based on store name
+  // Auto-suggest tags based on card name
   useEffect(() => {
-    if (formData.storeName && formData.storeName.length > 2 && !initialData) {
-      const autoTags = suggestTagsForStore(formData.storeName)
+    if (formData.name && formData.name.length > 2 && !initialData && !hasAutoFilledStore) {
+      const autoTags = suggestTagsForStore(formData.name)
       if (autoTags.length > 0) {
         // Merge auto-suggested tags with existing tag suggestions
         const allSuggestions = [...new Set([...autoTags, ...getTagSuggestions()])]
         setTagSuggestions(allSuggestions)
       }
     }
-     
-  }, [formData.storeName, initialData])
+  }, [formData.name, initialData, hasAutoFilledStore])
+
+  // Handle store selection with auto-fill
+  const handleStoreSelect = (store: StoreConfig) => {
+    setHasAutoFilledStore(true)
+    setFormData(prev => ({
+      ...prev,
+      name: store.name,
+      storeName: store.name,
+      color: store.color,
+      tags: store.defaultTags || prev.tags,
+      notes: store.defaultNotes || prev.notes,
+    }))
+    setShowSuggestions(false)
+    setSelectedSuggestionIndex(-1)
+
+    // Update tag suggestions with store-specific tags
+    if (store.defaultTags && store.defaultTags.length > 0) {
+      const allSuggestions = [...new Set([...store.defaultTags, ...getTagSuggestions()])]
+      setTagSuggestions(allSuggestions)
+    }
+  }
+
+  // Handle keyboard navigation in suggestions
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || storeSuggestions.length === 0) return
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setSelectedSuggestionIndex(prev =>
+          prev < storeSuggestions.length - 1 ? prev + 1 : prev
+        )
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setSelectedSuggestionIndex(prev => (prev > 0 ? prev - 1 : -1))
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (selectedSuggestionIndex >= 0) {
+          handleStoreSelect(storeSuggestions[selectedSuggestionIndex])
+        }
+        break
+      case 'Escape':
+        e.preventDefault()
+        setShowSuggestions(false)
+        setSelectedSuggestionIndex(-1)
+        break
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -161,41 +193,40 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
 
   return (
     <form className="card-form" onSubmit={handleSubmit}>
-      <Input
-        label="Card Name"
-        value={formData.name}
-        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        error={errors.name}
-        fullWidth
-        required
-      />
-
       <div className="form-field-with-suggestions">
         <Input
-          label="Store Name (optional)"
-          value={formData.storeName}
+          label="Card Name"
+          value={formData.name}
           onChange={(e) => {
-            setFormData({ ...formData, storeName: e.target.value })
+            setFormData({ ...formData, name: e.target.value, storeName: e.target.value })
             setShowSuggestions(true)
+            setHasAutoFilledStore(false)
           }}
+          onKeyDown={handleNameKeyDown}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          error={errors.storeName}
+          error={errors.name}
+          placeholder="e.g., Starbucks, Carrefour..."
           fullWidth
+          required
         />
         {showSuggestions && storeSuggestions.length > 0 && (
           <div className="store-suggestions">
-            {storeSuggestions.map(suggestion => (
+            {storeSuggestions.map((store, index) => (
               <button
-                key={suggestion}
+                key={store.name}
                 type="button"
-                className="store-suggestion-item"
-                onClick={() => {
-                  setFormData({ ...formData, storeName: suggestion })
-                  setShowSuggestions(false)
-                }}
+                className={`store-suggestion-item ${
+                  index === selectedSuggestionIndex ? 'store-suggestion-item--selected' : ''
+                }`}
+                onClick={() => handleStoreSelect(store)}
               >
-                {suggestion}
+                <span className="store-suggestion-name">{store.name}</span>
+                {store.defaultTags && store.defaultTags.length > 0 && (
+                  <span className="store-suggestion-tags">
+                    {store.defaultTags.slice(0, 2).join(', ')}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -226,13 +257,6 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         </select>
       </div>
 
-      <ColorPicker
-        label="Card Color"
-        value={formData.color}
-        onChange={(color) => setFormData({ ...formData, color })}
-        presetColors={PRESET_COLORS}
-      />
-
       <TagInput
         label="Tags (optional)"
         value={formData.tags}
@@ -240,6 +264,14 @@ export function CardForm({ initialData, onSubmit, onCancel }: CardFormProps) {
         suggestions={tagSuggestions}
         placeholder="Add a tag..."
         maxTags={10}
+      />
+
+      <ColorPicker
+        label="Card Color"
+        value={formData.color}
+        onChange={(color) => setFormData({ ...formData, color })}
+        presetColors={PRESET_COLORS}
+        compact
       />
 
       <div className="form-field">

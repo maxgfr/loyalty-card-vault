@@ -6,6 +6,7 @@ interface ColorPickerProps {
   onChange: (color: string) => void
   presetColors?: string[]
   label?: string
+  compact?: boolean
 }
 
 const DEFAULT_PRESET_COLORS = [
@@ -38,7 +39,7 @@ const COLOR_GROUPS = [
   { name: 'Neutral', colors: ['#64748b', '#78716c'] },
 ]
 
-export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COLORS, label }: ColorPickerProps) {
+export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COLORS, label, compact = false }: ColorPickerProps) {
   const [showCustom, setShowCustom] = useState(false)
 
   const handlePresetClick = (color: string) => {
@@ -54,7 +55,7 @@ export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COL
   const useGroupedLayout = presetColors === DEFAULT_PRESET_COLORS
 
   return (
-    <div className="color-picker">
+    <div className={`color-picker ${compact ? 'color-picker--compact' : ''}`}>
       {label && <label className="color-picker-label">{label}</label>}
 
       <div className="color-picker-container">

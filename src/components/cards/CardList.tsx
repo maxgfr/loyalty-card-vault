@@ -2,11 +2,17 @@ import { useState, useMemo } from 'react'
 import type { LoyaltyCard } from '../../types'
 import { CardItem } from './CardItem'
 import { Input } from '../ui/Input'
+import { Header } from '../layout/Header'
+import { Button } from '../ui/Button'
 import './CardList.css'
 
 interface CardListProps {
   cards: LoyaltyCard[]
   onCardClick: (cardId: string) => void
+}
+
+function navigateToSettings() {
+  window.location.hash = '#settings'
 }
 
 export function CardList({ cards, onCardClick }: CardListProps) {
@@ -38,6 +44,15 @@ export function CardList({ cards, onCardClick }: CardListProps) {
 
   return (
     <div className="card-list">
+      <Header
+        title="My Cards"
+        actions={
+          <Button variant="ghost" size="small" onClick={navigateToSettings}>
+            ⚙️ Settings
+          </Button>
+        }
+      />
+
       {cards.length > 0 && (
         <>
           <div className="card-list-search">
