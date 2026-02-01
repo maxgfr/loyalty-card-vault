@@ -51,9 +51,10 @@ describe('CardList', () => {
     expect(screen.getByText('Target Circle')).toBeInTheDocument()
   })
 
-  it('renders header with title', () => {
+  it('renders header with title and card count', () => {
     render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
 
     expect(screen.getByText('My Cards')).toBeInTheDocument()
+    expect(screen.getByText('2 cards')).toBeInTheDocument()
   })
 })

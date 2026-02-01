@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import type { LoyaltyCard } from '../../types'
 import { CardItem } from './CardItem'
 import { Input } from '../ui/Input'
-import { Header } from '../layout/Header'
 import './CardList.css'
 
 interface CardListProps {
@@ -39,7 +38,10 @@ export function CardList({ cards, onCardClick }: CardListProps) {
 
   return (
     <div className="card-list">
-      <Header title="My Cards" />
+      <div className="card-list-header">
+        <h1 className="card-list-title">My Cards</h1>
+        <p className="card-list-subtitle">{cards.length} {cards.length === 1 ? 'card' : 'cards'}</p>
+      </div>
 
       {cards.length > 0 && (
         <>
