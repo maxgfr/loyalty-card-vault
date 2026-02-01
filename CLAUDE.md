@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Loyalty Card Vault - A Progressive Web App (PWA) for managing loyalty cards with barcode scanning and peer-to-peer device synchronization. Built with React 19, TypeScript, Vite (Rolldown), and WebRTC.
+Loyalty Card Vault - A Progressive Web App (PWA) for managing loyalty cards with barcode scanning and encrypted URL sharing. Built with React 19, TypeScript, Vite (Rolldown), and IndexedDB.
 
-**Tech Stack**: React 19, TypeScript, Vite (Rolldown), IndexedDB (idb), ZXing (barcode), Zod (validation), WebRTC (P2P sync), Vitest (testing)
+**Tech Stack**: React 19, TypeScript, Vite (Rolldown), IndexedDB (idb), ZXing (barcode), bwip-js (barcode rendering), Zod (validation), Vitest (testing)
 
 ## Development Commands
 
@@ -24,53 +24,52 @@ pnpm lint             # Lint code with ESLint
 
 ## Test Coverage
 
-Current test coverage: **132 tests passing**
-- Unit tests for hooks (useCards, useShare)
-- Component tests (CardList, CardItem)
-- Library tests (crypto, validation, backup, sync)
+Current test coverage: **72 tests passing**
+- Unit tests for hooks (useCards)
+- Component tests (CardList)
+- Library tests (crypto, validation, backup, share-url)
 
 ## Architecture Overview
 
 ### Entry Point & Routing
 - `src/App.tsx` - Main application component with hash-based routing
 - `src/hooks/useHashRouter.ts` - Custom client-side router using window.location.hash
-- Routes: `home`, `card/:id`, `scan`, `add`, `edit/:id`, `settings`, `help`, `sync`
+- Routes: `home`, `card/:id`, `scan`, `add`, `edit/:id`, `settings`, `help`, `share/:encodedData`
 
 ### Component Organization
 Feature-based structure under `src/components/`:
 - `ui/` - Reusable UI primitives (Button, Card, Input, Modal, Toast, etc.)
 - `cards/` - Card management (CardList, CardItem, CardDetail, CardForm, AddCardPage, EditCardPage)
-- `sync/` - P2P synchronization UI
+- `share/` - Encrypted URL sharing (SharePage, ShareURLModal)
 - `scanner/` - Barcode scanner component
 - `layout/` - Layout wrappers (Header, BottomNav, Layout)
-- `settings/` - Settings page
-- `setup/` - Initial setup wizard
+- `settings/` - Settings page (theme, backup, reset)
+- `setup/` - Initial setup wizard (mandatory password)
 - `help/` - Help/documentation page
 
 ### State Management Pattern
 - Custom React hooks in `src/hooks/` handle domain logic
 - `useCards()` - CRUD operations for cards, encryption lock/unlock state
-- `useSyncSession()` - P2P sync session management
+- `useHashRouter()` - Hash-based routing
 - `useScanner()` - Barcode scanning with camera
-- `useShare()` - Web Share API integration
 - All state updates use immutable patterns (spread operators, no mutation)
 
 ### Storage Layer (`src/lib/storage.ts`)
 - IndexedDB via `idb` library for persistent storage
-- Optional AES-256-GCM encryption (user chooses during setup)
+- **Mandatory** AES-256-GCM encryption (all users must have password)
+- Theme settings (light/dark/auto)
+- `clearAllData()` for complete reset
 - Raw data access for backup/restore functionality
 - Settings stored separately from card data
 
-### P2P Synchronization (`src/lib/sync/`)
-**Protocol Flow**: Host creates session → displays QR → Guest scans → Guest responds with QR → Host scans → WebRTC connection established
+### Encrypted URL Sharing (`src/lib/share-url.ts`)
+**Flow**: Create share URL → Generate 6-char password → Encrypt cards → Encode as base64 → URL format `#/share/{encoded}`
 
-Key modules:
-- `sync-protocol.ts` - State machine orchestrating sync (hello → manifests → data → complete)
-- `webrtc-manager.ts` - WebRTC connection management
-- `signaling-codec.ts` - QR code encoding/decoding for session establishment
-- `conflict-resolver.ts` - Last-write-wins conflict resolution
-- `session-crypto.ts` - Optional session-level encryption
-- `types.ts` - All sync-related type definitions
+Key functions:
+- `createShareURL(cards)` - Returns `{ url, password }`
+- `decodeShareURL(encoded, password)` - Returns decrypted cards
+- Uses `crypto.ts` for AES-256-GCM encryption
+- Password contains only unambiguous characters (no 0/O, 1/I)
 
 ### Validation (`src/lib/validation.ts`)
 - Zod schemas for runtime type checking
@@ -81,11 +80,16 @@ Key modules:
 - Multiple format support
 - Auto-detection of store names from barcode data
 
+### Barcode Rendering (`src/components/cards/CardBarcode.tsx`)
+- bwip-js library for rendering barcodes on canvas
+- Supports all major barcode formats
+- Used in card detail view and export image
+
 ### Testing Setup
 - Unit tests: Vitest with jsdom environment
 - Test setup: `src/test/setup.ts` (auto-cleanup after each test, @testing-library/jest-dom)
 - Component testing: React Testing Library
-- Test utilities: mocks for IndexedDB, crypto, and WebRTC
+- Test utilities: mocks for IndexedDB and crypto
 - All tests use immutable patterns and proper act() wrapping for async updates
 
 ## Important Implementation Notes
@@ -96,17 +100,31 @@ Key modules:
 - Base path: `/loyalty-card-vault/` (GitHub Pages deployment)
 - React Compiler enabled via Babel plugin
 
-### State Synchronization
-- Cards have `createdAt` and `updatedAt` timestamps for conflict resolution
-- Sync protocol compares manifests, exchanges only changed cards
-- Last-write-wins based on `updatedAt` timestamp
-
 ### Encryption Flow
 1. Encryption is **mandatory** - all users must create a password during setup
 2. Password stored in memory only (never persisted)
 3. Each card encrypted with AES-256-GCM before IndexedDB storage
 4. Locking vault clears password from memory, requires re-entry
 5. Backup files detect encryption status from file content, not local settings
+
+### Theme System
+- Settings stored in IndexedDB (`theme` key)
+- Options: `light`, `dark`, `auto`
+- `auto` mode respects `prefers-color-scheme` media query
+- CSS classes applied to document root: `theme-light`, `theme-dark`, `theme-auto`
+
+### Share URL Format
+```
+https://example.com/app#share/{base64-encoded-encrypted-data}
+```
+- URL contains encrypted card data (base64 encoded)
+- Password (6 chars) shared separately via secure channel
+- Recipient opens URL → enters password → cards imported
+
+### Data Reset
+- `clearAllData()` in storage.ts deletes all cards and settings
+- User must go through setup again after reset
+- Confirmation modal required before reset
 
 ### Custom Hook Pattern
 All custom hooks follow this structure:
@@ -118,14 +136,15 @@ All custom hooks follow this structure:
 ### Type Definitions
 Core types in `src/types/index.ts`:
 - `LoyaltyCard` - Main card entity
-- `Route` - Hash-based route types
+- `Route` - Hash-based route types (includes `share` route)
 - `ScanResult` - Barcode scan result
+- `EncryptedPayload` - AES-256-GCM encrypted data structure
 - Barcode format types
 
 ## Development Workflow Notes
 
-- When modifying sync logic, test both host and guest flows
 - Barcode scanning requires HTTPS or localhost for camera access
 - PWA testing requires serving over HTTPS (or localhost)
 - IndexedDB data persists across sessions - clear browser storage for fresh testing
-- WebRTC requires both devices to be on same network for local testing
+- When modifying share logic, test full cycle (create URL → decode → import)
+- When modifying theme, test all three modes (light/dark/auto)

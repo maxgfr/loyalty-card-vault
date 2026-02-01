@@ -230,3 +230,40 @@ export async function importCardsRaw(
 
   return importedCount
 }
+
+/**
+ * Update theme setting
+ */
+export async function updateTheme(theme: 'light' | 'dark' | 'auto'): Promise<void> {
+  const db = await initDB()
+  await db.put(SETTINGS_STORE, theme, 'theme')
+}
+
+/**
+ * Get current theme setting
+ */
+export async function getTheme(): Promise<'light' | 'dark' | 'auto'> {
+  const db = await initDB()
+  const theme = (await db.get(SETTINGS_STORE, 'theme')) ?? 'auto'
+  return theme as 'light' | 'dark' | 'auto'
+}
+
+/**
+ * Clear all data (cards and settings)
+ * Use with caution - this will delete everything!
+ */
+export async function clearAllData(): Promise<void> {
+  const db = await initDB()
+
+  // Delete all cards
+  const allCardKeys = await db.getAllKeys(CARDS_STORE)
+  for (const key of allCardKeys) {
+    await db.delete(CARDS_STORE, key)
+  }
+
+  // Delete all settings
+  const allSettingKeys = await db.getAllKeys(SETTINGS_STORE)
+  for (const key of allSettingKeys) {
+    await db.delete(SETTINGS_STORE, key)
+  }
+}

@@ -1,11 +1,11 @@
 # 🎫 Loyalty Card Vault
 
-A secure Progressive Web App (PWA) for managing loyalty cards with barcode scanning and peer-to-peer device synchronization.
+A secure Progressive Web App (PWA) for managing loyalty cards with barcode scanning and encrypted URL sharing.
 
 ![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
 ![React 19](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Tests](https://img.shields.io/badge/Tests-132%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-72%20passing-success)
 
 ## ✨ Features
 
@@ -22,14 +22,19 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 - **Tags & Search**: Organize with tags and search by name/store
 - **Flip Cards**: Front shows card info, back shows barcode
 
-### 🔄 Sync & Backup
-- **P2P Device Sync**: WebRTC-based sync (no server required)
-- **QR Code Pairing**: Simple device-to-device pairing via QR codes
-- **Backup/Restore**: Export/import encrypted JSON backups
-- **Conflict Resolution**: Last-write-wins based on timestamps
+### 📤 Encrypted URL Sharing
+- **Share via URL**: Generate encrypted URLs for sharing cards
+- **Separate Password**: 6-character password shared separately
+- **Easy Import**: Recipients enter password to import shared cards
+- **One System**: Same mechanism for single card or multiple cards
 
-### 📤 Sharing
-- **Share Links**: Share card URLs via Web Share API
+### 💾 Backup & Restore
+- **Export Backup**: Download encrypted JSON backup file
+- **Import Backup**: Restore from previous backup with password
+- **Theme Switcher**: Light / Dark / Auto theme options
+- **Reset Data**: Complete data reset with confirmation
+
+### 🖼️ Export
 - **Export as Image**: Save card as PNG image
 - **Clipboard Fallback**: Automatic fallback for unsupported browsers
 
@@ -40,8 +45,8 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 - **Vite (Rolldown)** - Lightning-fast build tool
 - **IndexedDB** - Local encrypted storage
 - **ZXing** - Barcode scanning
-- **WebRTC** - P2P synchronization
-- **Vitest** - Unit testing (132 tests)
+- **bwip-js** - Barcode rendering
+- **Vitest** - Unit testing (72 tests)
 - **PWA** - Installable with offline support
 
 ## 📦 Installation
@@ -76,11 +81,6 @@ pnpm test:coverage
 pnpm lint
 ```
 
-**Test Coverage**: 132 tests passing
-- Unit tests for hooks (useCards, useShare)
-- Component tests (CardList, CardItem)
-- Library tests (crypto, validation, backup, sync)
-
 ## 📱 PWA Installation
 
 The app can be installed on mobile devices and desktop:
@@ -102,53 +102,27 @@ The app can be installed on mobile devices and desktop:
 - ✅ No cloud storage
 - ✅ No third-party services
 - ✅ Fully offline-capable
-- ✅ Data never leaves your device (except manual backup/sync)
+- ✅ Data never leaves your device (except manual backup/share)
 
 ## 🎨 UI Features
 
-- **Dark Mode Ready**: Respects system theme preferences
+- **Theme Options**: Light / Dark / Auto (system preference)
 - **Responsive Design**: Works on mobile, tablet, and desktop
 - **Touch-Optimized**: Swipe gestures and touch interactions
 - **Smooth Animations**: Card flips, transitions, and hover effects
 - **Accessible**: Semantic HTML and ARIA labels
 
-## 🔄 Sync Protocol
+## 📤 Share Protocol
 
-The P2P sync uses WebRTC for direct device-to-device communication:
+The encrypted URL sharing works as follows:
 
-1. **Host** creates session and displays QR code
-2. **Guest** scans QR code and responds with own QR code
-3. **Host** scans guest QR to establish WebRTC connection
-4. Both devices exchange card manifests
-5. Only changed cards are synced
-6. Conflicts resolved by last-write-wins (updatedAt timestamp)
-7. Optional session-level encryption
+1. **Sender** selects card(s) to share
+2. App generates encrypted URL + 6-character password
+3. Sender shares URL via any channel (email, messaging, QR)
+4. Sender shares password separately (secure channel)
+5. **Recipient** opens URL, enters password
+6. Cards are decrypted and imported into recipient's vault
 
-## 📄 Project Structure
-
-```
-src/
-├── components/         # React components
-│   ├── cards/         # Card management UI
-│   ├── layout/        # Layout components (Header, BottomNav)
-│   ├── scanner/       # Barcode scanner
-│   ├── settings/      # Settings page
-│   ├── setup/         # Initial setup wizard
-│   ├── sync/          # P2P sync UI
-│   └── ui/            # Reusable UI components
-├── hooks/             # Custom React hooks
-│   ├── useCards.ts    # Card CRUD operations
-│   ├── useScanner.ts  # Barcode scanning
-│   └── useShare.ts    # Web Share API
-├── lib/               # Core libraries
-│   ├── backup.ts      # Backup/restore
-│   ├── crypto.ts      # Encryption
-│   ├── scanner.ts     # ZXing integration
-│   ├── storage.ts     # IndexedDB
-│   ├── sync/          # P2P sync protocol
-│   └── validation.ts  # Zod schemas
-└── test/              # Test setup and utilities
-```
 
 ## 🛠️ Development
 
@@ -168,27 +142,10 @@ src/
 
 MIT
 
-## 🤝 Contributing
-
-Contributions welcome! Please follow these guidelines:
-
-1. Follow immutability patterns (no mutations)
-2. Add tests for new features
-3. Update documentation
-4. Use conventional commit messages
-5. Ensure all tests pass (`pnpm test`)
-
-## 🐛 Known Issues
-
-None currently. All major bugs fixed in recent updates:
-- ✅ Encryption now mandatory by default
-- ✅ Headers span full width consistently
-- ✅ Backup import detects encryption from file
-- ✅ Share functionality with multiple fallbacks
-
 ## 🙏 Acknowledgments
 
 - Built with ❤️ using Claude Code
 - Icons: Unicode emoji
 - Barcode scanning: ZXing library
+- Barcode rendering: bwip-js library
 - Encryption: Web Crypto API

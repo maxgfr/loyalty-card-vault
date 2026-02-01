@@ -27,6 +27,7 @@ describe('useCards', () => {
         storeName: 'Test Store',
         barcodeData: '123456',
         barcodeFormat: 'QR_CODE' as const,
+        color: '#FF5733',
         createdAt: Date.now(),
         updatedAt: Date.now(),
       },
@@ -76,6 +77,7 @@ describe('useCards', () => {
       storeName: 'New Store',
       barcodeData: '789',
       barcodeFormat: 'QR_CODE' as const,
+      color: '#00FF00',
     }
 
     await act(async () => {
@@ -98,6 +100,7 @@ describe('useCards', () => {
       storeName: 'Old Store',
       barcodeData: '123',
       barcodeFormat: 'QR_CODE' as const,
+      color: '#FF0000',
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }
@@ -130,6 +133,7 @@ describe('useCards', () => {
       storeName: 'Test Store',
       barcodeData: '123',
       barcodeFormat: 'QR_CODE' as const,
+      color: '#FF0000',
       createdAt: Date.now(),
       updatedAt: Date.now(),
     }
@@ -170,6 +174,7 @@ describe('useCards', () => {
         storeName: 'Test Store',
         barcodeData: '123',
         barcodeFormat: 'QR_CODE' as const,
+        color: '#FF5733',
         createdAt: Date.now(),
         updatedAt: Date.now(),
       },

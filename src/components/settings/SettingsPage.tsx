@@ -5,7 +5,8 @@ import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { Input } from '../ui/Input'
 import { exportBackup, importBackup, downloadBackup } from '../../lib/backup'
-import { isEncryptionEnabled, saveSettings } from '../../lib/storage'
+import { isEncryptionEnabled, getSettings, updateTheme, clearAllData } from '../../lib/storage'
+import type { AppSettings } from '../../types'
 import './SettingsPage.css'
 
 interface SettingsPageProps {
@@ -17,12 +18,45 @@ function navigateToHelp() {
   window.location.hash = '#help'
 }
 
+type ThemeOption = 'light' | 'dark' | 'auto'
+
 export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
   const [password, setPassword] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [settings, setSettings] = useState<AppSettings | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    const currentSettings = await getSettings()
+    setSettings(currentSettings)
+  }
+
+  const handleThemeChange = async (theme: ThemeOption) => {
+    await updateTheme(theme)
+    setSettings(prev => prev ? { ...prev, theme } : null)
+    applyTheme(theme)
+  }
+
+  const applyTheme = (theme: ThemeOption) => {
+    const root = document.documentElement
+    root.classList.remove('theme-light', 'theme-dark', 'theme-auto')
+
+    if (theme === 'auto') {
+      root.classList.add('theme-auto')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      root.classList.toggle('theme-dark', prefersDark)
+      root.classList.toggle('theme-light', !prefersDark)
+    } else {
+      root.classList.add(`theme-${theme}`)
+    }
+  }
 
   const handleExport = async () => {
     const encrypted = await isEncryptionEnabled()
@@ -70,7 +104,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
       } else {
         await performImport(file)
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: 'error', text: 'Invalid backup file' })
     }
   }
@@ -108,12 +142,63 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     }
   }
 
+  const handleReset = async () => {
+    try {
+      await clearAllData()
+      setMessage({ type: 'success', text: 'All data cleared. App will reset.' })
+      setShowResetModal(false)
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to clear data' })
+    }
+  }
+
+  if (!settings) {
+    return (
+      <div className="settings-page">
+        <Header title="Settings" onBack={onBack} />
+        <div className="settings-content">Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="settings-page">
       <Header title="Settings" onBack={onBack} />
 
       <div className="settings-content">
+        <Card>
+          <h3 className="settings-section-title">🎨 Theme</h3>
+          <p className="settings-section-description">
+            Choose your preferred appearance
+          </p>
+          <div className="settings-theme-selector">
+            <button
+              className={`settings-theme-option ${settings.theme === 'light' ? 'settings-theme-option--active' : ''}`}
+              onClick={() => handleThemeChange('light')}
+            >
+              <span className="settings-theme-icon">☀️</span>
+              <span className="settings-theme-label">Light</span>
+            </button>
+            <button
+              className={`settings-theme-option ${settings.theme === 'dark' ? 'settings-theme-option--active' : ''}`}
+              onClick={() => handleThemeChange('dark')}
+            >
+              <span className="settings-theme-icon">🌙</span>
+              <span className="settings-theme-label">Dark</span>
+            </button>
+            <button
+              className={`settings-theme-option ${settings.theme === 'auto' ? 'settings-theme-option--active' : ''}`}
+              onClick={() => handleThemeChange('auto')}
+            >
+              <span className="settings-theme-icon">🔄</span>
+              <span className="settings-theme-label">Auto</span>
+            </button>
+          </div>
+        </Card>
+
         <Card>
           <h3 className="settings-section-title">🔐 Encryption Status</h3>
           <p className="settings-section-description">
@@ -128,7 +213,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         </Card>
 
         <Card>
-          <h3 className="settings-section-title">Backup & Restore</h3>
+          <h3 className="settings-section-title">💾 Backup & Restore</h3>
           <p className="settings-section-description">
             Export your cards to a file or import from a previous backup
           </p>
@@ -147,6 +232,20 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             style={{ display: 'none' }}
             onChange={handleFileChange}
           />
+        </Card>
+
+        <Card>
+          <h3 className="settings-section-title">🗑️ Reset Data</h3>
+          <p className="settings-section-description">
+            Clear all cards and settings. This action cannot be undone.
+          </p>
+          <Button
+            variant="danger"
+            onClick={() => setShowResetModal(true)}
+            fullWidth
+          >
+            Reset All Data
+          </Button>
         </Card>
 
         {message && (
@@ -201,6 +300,29 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           fullWidth
           autoFocus
         />
+      </Modal>
+
+      <Modal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        title="Reset All Data"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowResetModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleReset}>
+              Reset Everything
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Are you sure you want to delete all cards and settings? This action cannot be undone.
+        </p>
+        <p>
+          You will need to go through the setup process again after resetting.
+        </p>
       </Modal>
 
     </div>

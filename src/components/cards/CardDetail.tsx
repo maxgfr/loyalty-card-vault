@@ -4,7 +4,9 @@ import { Header } from '../layout/Header'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
 import { CardBarcode } from './CardBarcode'
+import { ShareURLModal } from '../share/ShareURLModal'
 import { exportCardAsImage } from '../../lib/export-image'
+import { createShareURL } from '../../lib/share-url'
 import './CardDetail.css'
 
 interface CardDetailProps {
@@ -12,13 +14,13 @@ interface CardDetailProps {
   onBack: () => void
   onEdit: () => void
   onDelete: () => void
-  onShare: () => void
 }
 
-export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDetailProps) {
+export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [shareUrl, setShareUrl] = useState<{ url: string; password: string } | null>(null)
 
   const handleDelete = () => {
     onDelete()
@@ -34,6 +36,16 @@ export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDeta
       alert('Failed to export card as image')
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleShare = async () => {
+    try {
+      const result = await createShareURL([card])
+      setShareUrl(result)
+    } catch (error) {
+      console.error('Failed to create share URL:', error)
+      alert('Failed to create share URL')
     }
   }
 
@@ -179,7 +191,7 @@ export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDeta
 
         {/* Actions */}
         <div className="card-detail-actions">
-          <Button variant="primary" fullWidth onClick={onShare}>
+          <Button variant="primary" fullWidth onClick={handleShare}>
             📤 Share Card
           </Button>
           <Button
@@ -210,6 +222,13 @@ export function CardDetail({ card, onBack, onEdit, onDelete, onShare }: CardDeta
       >
         <p>Are you sure you want to delete {card.name}? This action cannot be undone.</p>
       </Modal>
+
+      <ShareURLModal
+        isOpen={shareUrl !== null}
+        onClose={() => setShareUrl(null)}
+        url={shareUrl?.url || ''}
+        password={shareUrl?.password || ''}
+      />
     </div>
   )
 }

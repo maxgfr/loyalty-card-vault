@@ -1,0 +1,76 @@
+.share-url-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.share-url-modal-info {
+  text-align: center;
+}
+
+.share-url-modal-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.share-url-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share-url-modal-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.share-url-modal-password {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-bg-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+
+.share-url-modal-password-text {
+  flex: 1;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-align: center;
+  color: var(--color-primary);
+  user-select: all;
+}
+
+.share-url-modal-url {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.share-url-modal-url-input {
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.share-url-modal-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.share-url-modal-qr {
+  text-align: center;
+}
+
+.share-url-modal-qr-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}

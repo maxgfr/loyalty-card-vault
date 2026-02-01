@@ -52,7 +52,7 @@ export async function decodeShareURL(encodedData: string, password: string): Pro
     const shareData: ShareData = JSON.parse(decrypted)
 
     return shareData.cards
-  } catch (error) {
+  } catch {
     throw new Error('Invalid share URL or incorrect password')
   }
 }

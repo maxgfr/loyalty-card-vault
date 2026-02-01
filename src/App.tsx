@@ -11,7 +11,7 @@ import { HelpPage } from './components/help/HelpPage'
 import { ToastContainer } from './components/ui/Toast'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
-import { useShare } from './hooks/useShare'
+import { SharePage } from './components/share/SharePage'
 import { getSettings } from './lib/storage'
 import type { ScanResult, LoyaltyCard } from './types'
 import './App.css'
@@ -21,15 +21,12 @@ let toastIdCounter = 0
 function App() {
   const { route, navigate, goBack } = useHashRouter()
   const { cards, addCard, updateCard, deleteCard, refreshCards } = useCards()
-  const { shareCard } = useShare()
   const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null)
-  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
 
   const checkSetup = useCallback(async () => {
     try {
-      const settings = await getSettings()
-      setEncryptionEnabled(settings.useEncryption)
+      await getSettings()
       setIsSetupComplete(true)
     } catch {
       setIsSetupComplete(false)
@@ -62,17 +59,18 @@ function App() {
     })
   }, [navigate])
 
-  const handleShare = useCallback(async (cardId: string) => {
-    const card = cards.find(c => c.id === cardId)
-    if (!card) return
-
-    const result = await shareCard(card)
-    if (result.success) {
-      addToast(result.fallback === 'clipboard' ? 'Link copied to clipboard' : 'Card shared successfully')
-    } else if (!result.cancelled) {
-      addToast(result.error || 'Failed to share card', 'error')
+  const handleImportShared = useCallback(async (sharedCards: LoyaltyCard[]) => {
+    try {
+      // Import all shared cards
+      for (const card of sharedCards) {
+        await addCard(card)
+      }
+      addToast(`Imported ${sharedCards.length} ${sharedCards.length === 1 ? 'card' : 'cards'}`)
+      navigate({ page: 'home' })
+    } catch {
+      addToast('Failed to import cards', 'error')
     }
-  }, [cards, shareCard, addToast])
+  }, [addCard, addToast, navigate])
 
   const handleUpdateCard = useCallback(async (cardId: string, updates: Partial<Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>>) => {
     try {
@@ -121,7 +119,6 @@ function App() {
               onBack={goBack}
               onEdit={() => navigate({ page: 'edit', cardId: card.id })}
               onDelete={() => handleDeleteCard(card.id)}
-              onShare={() => handleShare(card.id)}
             />
           ) : (
             <div className="page-error">
@@ -164,6 +161,14 @@ function App() {
 
         {route.page === 'help' && (
           <HelpPage onBack={goBack} />
+        )}
+
+        {route.page === 'share' && (
+          <SharePage
+            encodedData={route.encodedData}
+            onBack={goBack}
+            onImport={handleImportShared}
+          />
         )}
       </Layout>
 
