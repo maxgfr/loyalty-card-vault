@@ -72,14 +72,21 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const encrypted = await isEncryptionEnabled()
+    try {
+      // Read the file to check if it's encrypted
+      const text = await file.text()
+      const backupData = JSON.parse(text)
 
-    if (encrypted) {
-      setIsExporting(false)
-      setShowPasswordModal(true)
-      fileInputRef.current!.dataset.file = 'pending'
-    } else {
-      await performImport(file)
+      // Check if the backup file is encrypted
+      if (backupData.encrypted) {
+        setIsExporting(false)
+        setShowPasswordModal(true)
+        fileInputRef.current!.dataset.file = 'pending'
+      } else {
+        await performImport(file)
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Invalid backup file' })
     }
   }
 

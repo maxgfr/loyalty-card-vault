@@ -39,6 +39,34 @@
   gap: var(--space-lg);
 }
 
+.setup-info {
+  text-align: center;
+  padding: var(--space-lg);
+  background: rgba(99, 102, 241, 0.05);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+}
+
+.setup-info-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+}
+
+.setup-info-description {
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+  line-height: 1.6;
+}
+
+.setup-info-note {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
 .setup-option {
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);

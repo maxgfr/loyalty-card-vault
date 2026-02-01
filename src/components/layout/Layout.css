@@ -8,9 +8,7 @@
 .main-content {
   flex: 1;
   padding-bottom: 80px; /* Space for bottom navigation */
-  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
 }
 
 @media (max-width: 768px) {
