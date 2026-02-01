@@ -146,3 +146,19 @@ export function generateId(): string {
 export function isCryptoAvailable(): boolean {
   return typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined'
 }
+
+/**
+ * Generate a random password (alphanumeric, no ambiguous characters)
+ */
+export function generatePassword(length: number = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Removed ambiguous chars like 0,O,1,I
+  let password = ''
+  const array = new Uint8Array(length)
+  crypto.getRandomValues(array)
+
+  for (let i = 0; i < length; i++) {
+    password += chars[array[i] % chars.length]
+  }
+
+  return password
+}
