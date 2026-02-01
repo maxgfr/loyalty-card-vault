@@ -17,27 +17,12 @@ function navigateToHelp() {
   window.location.hash = '#help'
 }
 
-function navigateToSync() {
-  window.location.hash = '#sync'
-}
-
 export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [password, setPassword] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [encryptionEnabled, setEncryptionEnabled] = useState(false)
-  const [showEncryptionModal, setShowEncryptionModal] = useState(false)
-  const [pendingEncryptionChange, setPendingEncryptionChange] = useState<boolean | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    const loadEncryptionStatus = async () => {
-      const enabled = await isEncryptionEnabled()
-      setEncryptionEnabled(enabled)
-    }
-    loadEncryptionStatus()
-  }, [])
 
   const handleExport = async () => {
     const encrypted = await isEncryptionEnabled()
@@ -123,35 +108,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     }
   }
 
-  const handleToggleEncryption = () => {
-    setPendingEncryptionChange(!encryptionEnabled)
-    setShowEncryptionModal(true)
-  }
-
-  const confirmEncryptionChange = async () => {
-    if (pendingEncryptionChange === null) return
-
-    try {
-      await saveSettings({
-        useEncryption: pendingEncryptionChange,
-        theme: 'auto',
-        defaultBarcodeFormat: 'QR_CODE',
-      })
-      setEncryptionEnabled(pendingEncryptionChange)
-      setMessage({
-        type: 'success',
-        text: `Encryption ${pendingEncryptionChange ? 'enabled' : 'disabled'} successfully. ${
-          pendingEncryptionChange
-            ? 'New cards will be encrypted.'
-            : 'New cards will be stored without encryption.'
-        }`,
-      })
-      setShowEncryptionModal(false)
-      setPendingEncryptionChange(null)
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to update encryption settings' })
-    }
-  }
 
   return (
     <div className="settings-page">
@@ -159,28 +115,15 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
 
       <div className="settings-content">
         <Card>
-          <h3 className="settings-section-title">🔐 Encryption</h3>
+          <h3 className="settings-section-title">🔐 Encryption Status</h3>
           <p className="settings-section-description">
-            {encryptionEnabled
-              ? 'Your cards are encrypted with a password for extra security.'
-              : 'Your cards are stored without encryption. Enable for better security.'}
+            All your cards are encrypted with AES-256 encryption for maximum security.
           </p>
           <div className="encryption-status">
             <div className="encryption-status-badge">
-              <span className={`encryption-status-indicator ${encryptionEnabled ? 'encryption-status-indicator--enabled' : ''}`} />
-              <span className="encryption-status-text">
-                {encryptionEnabled ? 'Enabled' : 'Disabled'}
-              </span>
+              <span className="encryption-status-indicator encryption-status-indicator--enabled" />
+              <span className="encryption-status-text">Always Enabled</span>
             </div>
-          </div>
-          <div className="settings-actions">
-            <Button
-              variant={encryptionEnabled ? 'secondary' : 'primary'}
-              onClick={handleToggleEncryption}
-              fullWidth
-            >
-              {encryptionEnabled ? '🔓 Disable Encryption' : '🔒 Enable Encryption'}
-            </Button>
           </div>
         </Card>
 
@@ -211,18 +154,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             {message.text}
           </div>
         )}
-
-        <Card>
-          <h3 className="settings-section-title">Sync with Another Device</h3>
-          <p className="settings-section-description">
-            Synchronize your cards between devices using peer-to-peer connection (no server required)
-          </p>
-          <div className="settings-actions">
-            <Button variant="primary" onClick={navigateToSync} fullWidth>
-              🔄 Sync Devices
-            </Button>
-          </div>
-        </Card>
 
         <Card>
           <h3 className="settings-section-title">Help & Installation</h3>
@@ -272,55 +203,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         />
       </Modal>
 
-      <Modal
-        isOpen={showEncryptionModal}
-        onClose={() => {
-          setShowEncryptionModal(false)
-          setPendingEncryptionChange(null)
-        }}
-        title={pendingEncryptionChange ? 'Enable Encryption?' : 'Disable Encryption?'}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowEncryptionModal(false)
-                setPendingEncryptionChange(null)
-              }}
-            >
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={confirmEncryptionChange}>
-              {pendingEncryptionChange ? 'Enable' : 'Disable'}
-            </Button>
-          </>
-        }
-      >
-        <div className="encryption-modal-content">
-          {pendingEncryptionChange ? (
-            <>
-              <p>
-                <strong>⚠️ Important:</strong> After enabling encryption, you'll need to set a
-                password when adding or accessing cards.
-              </p>
-              <p>
-                Existing unencrypted cards will remain accessible, but new cards will be
-                encrypted.
-              </p>
-            </>
-          ) : (
-            <>
-              <p>
-                <strong>⚠️ Warning:</strong> Disabling encryption means new cards will be stored
-                without password protection.
-              </p>
-              <p>
-                Existing encrypted cards will remain encrypted and require a password to access.
-              </p>
-            </>
-          )}
-        </div>
-      </Modal>
     </div>
   )
 }
