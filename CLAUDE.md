@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Loyalty Card Vault - A Progressive Web App (PWA) for managing loyalty cards with barcode scanning and peer-to-peer device synchronization. Built with React 19, TypeScript, Vite (Rolldown), and WebRTC.
 
-**Tech Stack**: React 19, TypeScript, Vite (Rolldown), IndexedDB (idb), ZXing (barcode), Zod (validation), WebRTC (P2P sync), Vitest + Playwright (testing)
+**Tech Stack**: React 19, TypeScript, Vite (Rolldown), IndexedDB (idb), ZXing (barcode), Zod (validation), WebRTC (P2P sync), Vitest (testing)
 
 ## Development Commands
 
@@ -16,11 +16,18 @@ pnpm build            # TypeScript compilation + Vite production build
 pnpm preview          # Preview production build locally
 pnpm test             # Run unit tests with Vitest
 pnpm test:ui          # Run tests with Vitest UI interface
-pnpm test:coverage    # Run tests with coverage report (target: 80%+)
+pnpm test:coverage    # Run tests with coverage report
 pnpm lint             # Lint code with ESLint
 ```
 
 **Package Manager**: pnpm (with Rolldown override configured in package.json)
+
+## Test Coverage
+
+Current test coverage: **132 tests passing**
+- Unit tests for hooks (useCards, useShare)
+- Component tests (CardList, CardItem)
+- Library tests (crypto, validation, backup, sync)
 
 ## Architecture Overview
 
@@ -76,10 +83,10 @@ Key modules:
 
 ### Testing Setup
 - Unit tests: Vitest with jsdom environment
-- Test setup: `src/test/setup.ts` (auto-cleanup after each test)
+- Test setup: `src/test/setup.ts` (auto-cleanup after each test, @testing-library/jest-dom)
 - Component testing: React Testing Library
-- E2E testing: Playwright (critical user flows)
 - Test utilities: mocks for IndexedDB, crypto, and WebRTC
+- All tests use immutable patterns and proper act() wrapping for async updates
 
 ## Important Implementation Notes
 
@@ -95,10 +102,11 @@ Key modules:
 - Last-write-wins based on `updatedAt` timestamp
 
 ### Encryption Flow
-1. User chooses encryption during initial setup
+1. Encryption is **mandatory** - all users must create a password during setup
 2. Password stored in memory only (never persisted)
 3. Each card encrypted with AES-256-GCM before IndexedDB storage
 4. Locking vault clears password from memory, requires re-entry
+5. Backup files detect encryption status from file content, not local settings
 
 ### Custom Hook Pattern
 All custom hooks follow this structure:

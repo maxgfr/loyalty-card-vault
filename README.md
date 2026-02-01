@@ -1,212 +1,194 @@
-# Loyalty Card Vault 🎴
+# 🎫 Loyalty Card Vault
 
-A secure, offline-first Progressive Web App (PWA) for managing your loyalty cards with barcode scanning and peer-to-peer device synchronization.
+A secure Progressive Web App (PWA) for managing loyalty cards with barcode scanning and peer-to-peer device synchronization.
 
-## 🌟 Features
+![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
+![React 19](https://img.shields.io/badge/React-19-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
+![Tests](https://img.shields.io/badge/Tests-132%20passing-success)
 
-### Core Features
-- **📱 Barcode Scanning**: Scan loyalty cards using your device camera
-- **🔒 Encryption**: Optional AES-256-GCM encryption for sensitive data
-- **💾 Offline-First**: Works completely offline with IndexedDB storage
-- **📤 Backup & Restore**: Export/import your cards as JSON files
-- **🎨 Customization**: Color-code cards and add tags for organization
-- **🔍 Smart Detection**: Auto-detect store names and suggest tags
+## ✨ Features
 
-### Device Synchronization (NEW!)
-- **🔄 P2P Sync**: Synchronize cards between devices using WebRTC
-- **🚫 No Server Required**: 100% peer-to-peer, no data sent to servers
-- **🔐 Encrypted Transfer**: Optional session-level encryption
-- **📷 QR Code Pairing**: Simple pairing via QR code scanning
-- **⚡ Real-time**: Automatic sync once connected
-- **🔀 Conflict Resolution**: Last-write-wins strategy
+### 🔐 Security First
+- **AES-256 Encryption**: All cards encrypted by default
+- **Password Protection**: Mandatory password setup on first launch
+- **No Cloud Storage**: Everything stored locally in IndexedDB
+- **Lock/Unlock Vault**: Password never persisted, only in memory
 
-## 🚀 Live Demo
+### 📱 Card Management
+- **Barcode Scanning**: Camera-based scanning with ZXing (QR, EAN-13, UPC-A, CODE-128, etc.)
+- **Smart Detection**: Auto-detects store names from barcode data
+- **Visual Cards**: Beautiful card UI with customizable colors
+- **Tags & Search**: Organize with tags and search by name/store
+- **Flip Cards**: Front shows card info, back shows barcode
 
-Visit the live app: **[Loyalty Card Vault](https://YOUR-USERNAME.github.io/loyalty-card-vault/)**
+### 🔄 Sync & Backup
+- **P2P Device Sync**: WebRTC-based sync (no server required)
+- **QR Code Pairing**: Simple device-to-device pairing via QR codes
+- **Backup/Restore**: Export/import encrypted JSON backups
+- **Conflict Resolution**: Last-write-wins based on timestamps
 
-> Replace `YOUR-USERNAME` with your GitHub username
+### 📤 Sharing
+- **Share Links**: Share card URLs via Web Share API
+- **Export as Image**: Save card as PNG image
+- **Clipboard Fallback**: Automatic fallback for unsupported browsers
 
-## 📦 Tech Stack
+## 🚀 Tech Stack
 
-- **Framework**: React 19 with TypeScript
-- **Build Tool**: Vite (Rolldown)  
-- **Styling**: CSS with CSS Variables
-- **Storage**: IndexedDB (via idb)
-- **Encryption**: Web Crypto API
-- **Barcode**: ZXing library
-- **PWA**: Vite PWA plugin with Workbox
-- **Validation**: Zod
-- **P2P**: WebRTC with manual signaling
-- **Testing**: Vitest (120+ tests)
+- **React 19** - UI framework with React Compiler
+- **TypeScript** - Type safety
+- **Vite (Rolldown)** - Lightning-fast build tool
+- **IndexedDB** - Local encrypted storage
+- **ZXing** - Barcode scanning
+- **WebRTC** - P2P synchronization
+- **Vitest** - Unit testing (132 tests)
+- **PWA** - Installable with offline support
 
-## 🛠️ Development
+## 📦 Installation
 
-### Prerequisites
-
-- Node.js 18+
-- pnpm (recommended) or npm
-
-### Installation
-
-\`\`\`bash
-# Clone the repository
-git clone https://github.com/YOUR-USERNAME/loyalty-card-vault.git
-cd loyalty-card-vault
-
+```bash
 # Install dependencies
 pnpm install
 
 # Start development server
 pnpm dev
-\`\`\`
 
-### Available Scripts
-
-\`\`\`bash
-pnpm dev          # Start development server
-pnpm build        # Build for production
-pnpm preview      # Preview production build
-pnpm test         # Run unit tests
-pnpm lint         # Lint code
-\`\`\`
-
-## 🔄 How to Sync Between Devices
-
-1. **On Host Device**:
-   - Go to Settings → Sync Devices
-   - Choose "Host Session"
-   - Display the QR code
-
-2. **On Guest Device**:
-   - Go to Settings → Sync Devices
-   - Choose "Join Session"
-   - Scan the host's QR code
-   - Show your answer QR code
-
-3. **Complete Pairing**:
-   - Host scans the guest's answer QR code
-   - Sync happens automatically!
-
-## 🚀 Deployment to GitHub Pages
-
-### Option 1: Automatic with GitHub Actions (Recommended)
-
-1. Create `.github/workflows/deploy.yml`:
-
-\`\`\`yaml
-name: Deploy to GitHub Pages
-
-on:
-  push:
-    branches: [ main ]
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-      - uses: actions/deploy-pages@v4
-\`\`\`
-
-2. Enable GitHub Pages:
-   - Go to repository Settings → Pages
-   - Source: "GitHub Actions"
-   - Save
-
-3. Push to main branch - deployment happens automatically!
-
-### Option 2: Manual Deployment
-
-\`\`\`bash
-# Build the project
+# Build for production
 pnpm build
 
-# Deploy dist/ folder to your hosting provider
-\`\`\`
-
-## 📱 Install as PWA
-
-### iOS (Safari)
-1. Open app in Safari
-2. Tap Share button
-3. "Add to Home Screen"
-
-### Android (Chrome)
-1. Open app in Chrome
-2. Tap menu (⋮)
-3. "Add to Home screen"
-
-### Desktop
-1. Click install icon in address bar
-2. Click "Install"
+# Preview production build
+pnpm preview
+```
 
 ## 🧪 Testing
 
-\`\`\`bash
-# Run all tests (120+ tests)
+```bash
+# Run all tests
 pnpm test
 
-# Run with UI
+# Run tests with UI
 pnpm test:ui
 
-# Coverage
+# Run tests with coverage
 pnpm test:coverage
-\`\`\`
 
-## 🏗️ Project Structure
+# Lint code
+pnpm lint
+```
 
-\`\`\`
+**Test Coverage**: 132 tests passing
+- Unit tests for hooks (useCards, useShare)
+- Component tests (CardList, CardItem)
+- Library tests (crypto, validation, backup, sync)
+
+## 📱 PWA Installation
+
+The app can be installed on mobile devices and desktop:
+
+1. Open the app in a browser
+2. Look for "Install" or "Add to Home Screen" prompt
+3. Follow browser-specific installation steps
+
+## 🔒 Security Features
+
+### Encryption
+- **Algorithm**: AES-256-GCM
+- **Key Derivation**: PBKDF2 (100,000 iterations)
+- **Password Requirements**: Minimum 8 characters with letter + number
+- **Storage**: Encrypted data in IndexedDB, password in memory only
+
+### Privacy
+- ✅ No telemetry or analytics
+- ✅ No cloud storage
+- ✅ No third-party services
+- ✅ Fully offline-capable
+- ✅ Data never leaves your device (except manual backup/sync)
+
+## 🎨 UI Features
+
+- **Dark Mode Ready**: Respects system theme preferences
+- **Responsive Design**: Works on mobile, tablet, and desktop
+- **Touch-Optimized**: Swipe gestures and touch interactions
+- **Smooth Animations**: Card flips, transitions, and hover effects
+- **Accessible**: Semantic HTML and ARIA labels
+
+## 🔄 Sync Protocol
+
+The P2P sync uses WebRTC for direct device-to-device communication:
+
+1. **Host** creates session and displays QR code
+2. **Guest** scans QR code and responds with own QR code
+3. **Host** scans guest QR to establish WebRTC connection
+4. Both devices exchange card manifests
+5. Only changed cards are synced
+6. Conflicts resolved by last-write-wins (updatedAt timestamp)
+7. Optional session-level encryption
+
+## 📄 Project Structure
+
+```
 src/
-├── components/           # React components
-│   ├── sync/            # P2P sync UI (NEW!)
-│   ├── cards/           # Card components
-│   ├── scanner/         # Barcode scanner
-│   └── ui/              # Reusable UI
-├── hooks/               # Custom hooks
-│   └── useSyncSession.ts # Sync hook (NEW!)
-├── lib/
-│   ├── sync/           # P2P sync logic (NEW!)
-│   ├── crypto.ts       # Encryption
-│   └── storage.ts      # IndexedDB
-└── types/              # TypeScript types
-\`\`\`
+├── components/         # React components
+│   ├── cards/         # Card management UI
+│   ├── layout/        # Layout components (Header, BottomNav)
+│   ├── scanner/       # Barcode scanner
+│   ├── settings/      # Settings page
+│   ├── setup/         # Initial setup wizard
+│   ├── sync/          # P2P sync UI
+│   └── ui/            # Reusable UI components
+├── hooks/             # Custom React hooks
+│   ├── useCards.ts    # Card CRUD operations
+│   ├── useScanner.ts  # Barcode scanning
+│   └── useShare.ts    # Web Share API
+├── lib/               # Core libraries
+│   ├── backup.ts      # Backup/restore
+│   ├── crypto.ts      # Encryption
+│   ├── scanner.ts     # ZXing integration
+│   ├── storage.ts     # IndexedDB
+│   ├── sync/          # P2P sync protocol
+│   └── validation.ts  # Zod schemas
+└── test/              # Test setup and utilities
+```
 
-## 🔒 Security & Privacy
+## 🛠️ Development
 
-- ✅ **Local-First**: Data stays on your device
-- ✅ **End-to-End**: P2P sync, no server access
-- ✅ **Encryption**: AES-256-GCM when enabled
-- ✅ **No Tracking**: Zero analytics or telemetry
-- ✅ **Open Source**: Audit the code yourself
+### Build Configuration
+- **Vite with Rolldown**: Faster builds via Rolldown bundler
+- **React Compiler**: Automatic optimization with babel-plugin-react-compiler
+- **PWA Plugin**: Service worker generation with Workbox
+- **Base Path**: `/loyalty-card-vault/` for GitHub Pages deployment
+
+### Code Quality
+- **ESLint**: Code linting with React hooks rules
+- **TypeScript**: Strict type checking
+- **Immutability**: All state updates use immutable patterns
+- **Testing**: Comprehensive test suite with Vitest
 
 ## 📝 License
 
-MIT License - Free to use, modify, and distribute!
+MIT
 
 ## 🤝 Contributing
 
-Contributions welcome! Feel free to:
-- Report bugs
-- Suggest features
-- Submit pull requests
+Contributions welcome! Please follow these guidelines:
 
----
+1. Follow immutability patterns (no mutations)
+2. Add tests for new features
+3. Update documentation
+4. Use conventional commit messages
+5. Ensure all tests pass (`pnpm test`)
 
-**Built with** ❤️ **using React, TypeScript, and WebRTC**
+## 🐛 Known Issues
+
+None currently. All major bugs fixed in recent updates:
+- ✅ Encryption now mandatory by default
+- ✅ Headers span full width consistently
+- ✅ Backup import detects encryption from file
+- ✅ Share functionality with multiple fallbacks
+
+## 🙏 Acknowledgments
+
+- Built with ❤️ using Claude Code
+- Icons: Unicode emoji
+- Barcode scanning: ZXing library
+- Encryption: Web Crypto API

@@ -39,7 +39,7 @@ export function CardList({ cards, onCardClick }: CardListProps) {
   return (
     <div className="card-list">
       <div className="card-list-header">
-        <h1 className="card-list-title">My Cards</h1>
+        <h1 className="card-list-title">Loyalty Vault Card</h1>
         <p className="card-list-subtitle">{cards.length} {cards.length === 1 ? 'card' : 'cards'}</p>
       </div>
 

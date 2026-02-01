@@ -54,7 +54,7 @@ describe('CardList', () => {
   it('renders header with title and card count', () => {
     render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
 
-    expect(screen.getByText('My Cards')).toBeInTheDocument()
+    expect(screen.getByText('Loyalty Vault Card')).toBeInTheDocument()
     expect(screen.getByText('2 cards')).toBeInTheDocument()
   })
 })
