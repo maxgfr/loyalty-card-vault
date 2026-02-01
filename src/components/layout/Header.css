@@ -11,8 +11,6 @@
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-lg);
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .header-back {

@@ -11,7 +11,7 @@ interface SetupPageProps {
 }
 
 export function SetupPage({ onComplete }: SetupPageProps) {
-  const [useEncryption, setUseEncryption] = useState(false)
+  const [useEncryption, setUseEncryption] = useState(true)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -61,13 +61,13 @@ export function SetupPage({ onComplete }: SetupPageProps) {
                 <input
                   type="radio"
                   name="encryption"
-                  checked={!useEncryption}
-                  onChange={() => setUseEncryption(false)}
+                  checked={useEncryption}
+                  onChange={() => setUseEncryption(true)}
                 />
                 <div>
-                  <span className="setup-option-title">Simple Mode</span>
+                  <span className="setup-option-title">🔒 Secure Mode (Recommended)</span>
                   <p className="setup-option-description">
-                    Cards stored without encryption. Quick and easy.
+                    Cards encrypted with AES-256. Protects your loyalty card numbers and barcodes from unauthorized access.
                   </p>
                 </div>
               </label>
@@ -78,13 +78,13 @@ export function SetupPage({ onComplete }: SetupPageProps) {
                 <input
                   type="radio"
                   name="encryption"
-                  checked={useEncryption}
-                  onChange={() => setUseEncryption(true)}
+                  checked={!useEncryption}
+                  onChange={() => setUseEncryption(false)}
                 />
                 <div>
-                  <span className="setup-option-title">Secure Mode (Recommended)</span>
+                  <span className="setup-option-title">⚠️ Simple Mode</span>
                   <p className="setup-option-description">
-                    Cards encrypted with a password. More secure.
+                    Cards stored without encryption. Not recommended - anyone with access to your device can view your cards.
                   </p>
                 </div>
               </label>

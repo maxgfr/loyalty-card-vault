@@ -5,7 +5,7 @@ export function useShare() {
   const canShare = 'share' in navigator
 
   const shareCard = useCallback(async (card: LoyaltyCard) => {
-    const shareUrl = `${window.location.origin}${window.location.pathname}#/card/${card.id}`
+    const shareUrl = `${window.location.origin}${window.location.pathname}#card/${card.id}`
     const shareData = {
       title: `${card.name} - ${card.storeName}`,
       text: `Check out my ${card.storeName} loyalty card`,

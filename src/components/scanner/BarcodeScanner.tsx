@@ -84,8 +84,8 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
                 <div className="scanner-overlay">
                   <div className="scanner-frame" />
                 </div>
-                <Button onClick={stopScanning} variant="secondary" className="scanner-stop">
-                  Stop Scanning
+                <Button onClick={stopScanning} variant="primary" className="scanner-stop">
+                  ⏹️ Stop Scanning
                 </Button>
               </>
             )}

@@ -22,8 +22,8 @@ export default defineConfig({
         background_color: '#1a1a2e',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: '/loyalty-card-vault/',
+        scope: '/loyalty-card-vault/',
         icons: [
           {
             src: 'icons/icon-192.png',

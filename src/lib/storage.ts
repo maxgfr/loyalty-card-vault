@@ -208,16 +208,20 @@ export async function importCardsRaw(
         }
         importedCount++
       } else if ('iv' in card && 'data' in card && 'salt' in card) {
-        // Encrypted card
-        if (encrypted && password) {
-          await db.put(CARDS_STORE, card, (card as EncryptedPayload).data)
-        } else if (password) {
-          // Decrypt and store unencrypted
+        // Encrypted card - need to decrypt to get the ID
+        if (password) {
           const decryptedJson = await decrypt(card as EncryptedPayload, password)
           const loyaltyCard = JSON.parse(decryptedJson) as LoyaltyCard
-          await db.put(CARDS_STORE, loyaltyCard, loyaltyCard.id)
+
+          if (encrypted) {
+            // Re-encrypt for current storage mode
+            await saveCard(loyaltyCard, password)
+          } else {
+            // Store unencrypted
+            await db.put(CARDS_STORE, loyaltyCard, loyaltyCard.id)
+          }
+          importedCount++
         }
-        importedCount++
       }
     } catch (error) {
       console.error('Failed to import card:', error)
