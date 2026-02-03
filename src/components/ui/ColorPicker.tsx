@@ -58,6 +58,8 @@ export function ColorPicker({ value, onChange, presetColors = DEFAULT_PRESET_COL
     <div className={`color-picker ${compact ? 'color-picker--compact' : ''}`}>
       {label && <label className="color-picker-label">{label}</label>}
 
+      <p className="color-picker-hint">Tap a color to select</p>
+
       <div className="color-picker-container">
         {useGroupedLayout ? (
           <div className="color-picker-grouped">

@@ -7,6 +7,7 @@ import { ShareURLModal } from '../share/ShareURLModal'
 import { exportBackup, importBackup, downloadBackup } from '../../lib/backup'
 import { getSettings, updateTheme, clearAllData, getAllCards } from '../../lib/storage'
 import { createShareURL } from '../../lib/share-url'
+import { APP_VERSION } from '../../lib/version'
 import type { AppSettings } from '../../types'
 import './SettingsPage.css'
 
@@ -480,6 +481,16 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             </div>
           )}
         </Card>
+
+        {/* Version info */}
+        <div className="settings-version">
+          <p className="settings-version-text">
+            Version {APP_VERSION}
+          </p>
+          <p className="settings-version-build">
+            Built with ❤️ • Open Source
+          </p>
+        </div>
       </div>
 
       <Modal

@@ -150,7 +150,7 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
               {/* Barcode section */}
               <div className="card-detail-barcode-section">
                 <div className="card-detail-barcode-container">
-                  <CardBarcode data={card.barcodeData} format={card.barcodeFormat} scale={3} />
+                  <CardBarcode data={card.barcodeData} format={card.barcodeFormat} scale={4} />
                 </div>
                 <p className="card-detail-barcode-data">{card.barcodeData}</p>
               </div>
