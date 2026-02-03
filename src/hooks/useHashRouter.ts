@@ -35,8 +35,6 @@ function parseHash(hash: string): Route {
       return { page: 'settings' }
     case 'setup':
       return { page: 'setup' }
-    case 'help':
-      return { page: 'help' }
     case 'share':
       return { page: 'share', encodedData: params[0] || '' }
     default:
@@ -68,8 +66,6 @@ function routeToHash(route: Route): string {
       return '#/settings'
     case 'setup':
       return '#/setup'
-    case 'help':
-      return '#/help'
     case 'share':
       return `#/share/${route.encodedData}`
     default:

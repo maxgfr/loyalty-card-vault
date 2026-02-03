@@ -83,5 +83,4 @@ export type Route =
   | { page: 'edit'; cardId: string }
   | { page: 'settings' }
   | { page: 'setup' }
-  | { page: 'help' }
   | { page: 'share'; encodedData: string }

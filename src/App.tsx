@@ -6,7 +6,6 @@ import { AddCardPage } from './components/cards/AddCardPage'
 import { EditCardPage } from './components/cards/EditCardPage'
 import { BarcodeScanner } from './components/scanner/BarcodeScanner'
 import { SettingsPage } from './components/settings/SettingsPage'
-import { HelpPage } from './components/help/HelpPage'
 import { ToastContainer } from './components/ui/Toast'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
@@ -168,10 +167,6 @@ function App() {
 
         {route.page === 'settings' && (
           <SettingsPage onBack={goBack} onRefreshCards={refreshCards} />
-        )}
-
-        {route.page === 'help' && (
-          <HelpPage onBack={goBack} />
         )}
 
         {route.page === 'share' && (
