@@ -1,5 +1,5 @@
 import type { BarcodeFormat } from '../types'
-import { getStoresForCountry, getStoreColorsMap } from './stores'
+import { getStoreColorsMap } from './stores'
 
 /**
  * Store-specific color associations (generated from store data)
@@ -36,22 +36,6 @@ export function detectBarcodeFormat(data: string): BarcodeFormat | null {
   // Default to QR_CODE or CODE_128 for other patterns
   if (data.length > 80) return 'QR_CODE'
   return 'CODE_128'
-}
-
-/**
- * Suggest store names based on partial input (deprecated - use suggestStores from ./stores instead)
- * @deprecated Use suggestStores from ./stores instead
- */
-export function suggestStoreNames(input: string): string[] {
-  if (!input || input.length < 2) return []
-
-  const lowerInput = input.toLowerCase()
-  const stores = getStoresForCountry()
-
-  return stores
-    .filter(store => store.name.toLowerCase().includes(lowerInput))
-    .slice(0, 5)
-    .map(store => store.name)
 }
 
 /**

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   detectBarcodeFormat,
-  suggestStoreNames,
   getStoreColor,
   generateColorFromString,
   getSmartDefaults,
@@ -32,29 +31,6 @@ describe('smart detection utilities', () => {
 
     it('should return null for empty string', () => {
       expect(detectBarcodeFormat('')).toBeNull()
-    })
-  })
-
-  describe('suggestStoreNames', () => {
-    it('should return suggestions for partial input', () => {
-      const suggestions = suggestStoreNames('star')
-      expect(suggestions).toContain('Starbucks')
-      expect(suggestions.length).toBeLessThanOrEqual(5)
-    })
-
-    it('should be case insensitive', () => {
-      const suggestions = suggestStoreNames('STAR')
-      expect(suggestions).toContain('Starbucks')
-    })
-
-    it('should return empty for short input', () => {
-      const suggestions = suggestStoreNames('a')
-      expect(suggestions).toEqual([])
-    })
-
-    it('should return empty for no matches', () => {
-      const suggestions = suggestStoreNames('xyz123')
-      expect(suggestions).toEqual([])
     })
   })
 

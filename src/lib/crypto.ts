@@ -132,13 +132,6 @@ export function generateId(): string {
 }
 
 /**
- * Check if Web Crypto API is available
- */
-export function isCryptoAvailable(): boolean {
-  return typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined'
-}
-
-/**
  * Generate a random password (alphanumeric, no ambiguous characters)
  */
 export function generatePassword(length: number = 8): string {

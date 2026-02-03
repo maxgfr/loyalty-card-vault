@@ -4,7 +4,6 @@ import {
   barcodeFormatSchema,
   colorSchema,
   passwordSchema,
-  validatePassword,
   barcodeDataValidators,
 } from './validation'
 
@@ -84,20 +83,6 @@ describe('validation schemas', () => {
       expect(() => passwordSchema.parse('short')).toThrow() // Too short
       expect(() => passwordSchema.parse('nodigits')).toThrow() // No digits
       expect(() => passwordSchema.parse('12345678')).toThrow() // No letters
-    })
-  })
-
-  describe('validatePassword', () => {
-    it('should return valid for strong passwords', () => {
-      const result = validatePassword('Secure123')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('should return error for weak passwords', () => {
-      const result = validatePassword('weak')
-      expect(result.valid).toBe(false)
-      expect(result.error).toBeTruthy()
     })
   })
 

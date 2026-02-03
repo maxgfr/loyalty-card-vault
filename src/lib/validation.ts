@@ -103,18 +103,3 @@ export function validateCard(data: unknown): z.infer<typeof cardSchema> {
 export function validateBackup(data: unknown): z.infer<typeof backupSchema> {
   return backupSchema.parse(data)
 }
-
-/**
- * Validate password
- */
-export function validatePassword(password: string): { valid: boolean; error?: string } {
-  try {
-    passwordSchema.parse(password)
-    return { valid: true }
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { valid: false, error: error.issues[0].message }
-    }
-    return { valid: false, error: 'Invalid password' }
-  }
-}

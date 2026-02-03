@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  generateId,
-  isCryptoAvailable,
-} from './crypto'
+import { generateId } from './crypto'
 
 describe('crypto utilities', () => {
   describe('generateId', () => {
@@ -18,13 +15,6 @@ describe('crypto utilities', () => {
     it('should generate IDs in correct format', () => {
       const id = generateId()
       expect(id).toMatch(/^\d+-[a-z0-9]+$/)
-    })
-  })
-
-  describe('isCryptoAvailable', () => {
-    it('should detect crypto availability', () => {
-      const available = isCryptoAvailable()
-      expect(typeof available).toBe('boolean')
     })
   })
 })

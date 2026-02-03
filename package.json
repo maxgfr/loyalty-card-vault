@@ -13,7 +13,8 @@
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "pwa:generate": "pwa-asset-generator public/logo.svg public/icons --background '#1a1a2e' --padding '10%' --type png"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.5",
@@ -43,6 +44,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "jsdom": "^27.4.0",
+    "pwa-asset-generator": "^6.3.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "npm:rolldown-vite@7.2.5",
