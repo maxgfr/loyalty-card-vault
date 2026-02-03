@@ -29,8 +29,15 @@ export class BarcodeScanner {
           if (this.isScanning && result) {
             onResult(result)
           }
-          if (error && !(error.name === 'NotFoundException')) {
-            onError(error as Error)
+          // Ignore common scanning errors that happen during continuous scanning
+          if (error) {
+            const isExpectedError =
+              error.name === 'NotFoundException' ||
+              error.message?.includes('No MultiFormat Readers')
+
+            if (!isExpectedError) {
+              onError(error as Error)
+            }
           }
         }
       )
