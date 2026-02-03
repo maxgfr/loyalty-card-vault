@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "pwa:generate": "pwa-asset-generator public/logo.svg public/icons --background '#1a1a2e' --padding '10%' --type png"
+    "pwa:generate": "pwa-asset-generator public/logo.svg public/icons --type png"
   },
   "dependencies": {
     "@zxing/browser": "^0.1.5",

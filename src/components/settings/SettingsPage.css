@@ -172,6 +172,13 @@
   font-size: 1.5rem;
 }
 
+.help-section-title {
+  flex: 1;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 .help-arrow {
   font-size: 0.875rem;
   color: var(--color-text-muted);
