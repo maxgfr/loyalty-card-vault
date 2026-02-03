@@ -118,14 +118,30 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
 
   const handleReset = async () => {
     try {
+      // 1. Clear all data (IndexedDB)
       await clearAllData()
-      setMessage({ type: 'success', text: 'All data cleared. App will reset.' })
+
+      // 2. Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map(registration => registration.unregister()))
+      }
+
+      // 3. Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)))
+      }
+
+      setMessage({ type: 'success', text: 'All data and cache cleared. App will reset.' })
       setShowResetModal(false)
+
+      // 4. Hard reload (bypass cache)
       setTimeout(() => {
-        window.location.reload()
+        window.location.href = window.location.href.split('#')[0] + '?t=' + Date.now()
       }, 1500)
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to clear data' })
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to clear data: ${error instanceof Error ? error.message : 'Unknown error'}` })
     }
   }
 
