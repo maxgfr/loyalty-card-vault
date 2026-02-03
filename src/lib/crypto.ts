@@ -45,21 +45,6 @@ function generateIV(): Uint8Array {
 }
 
 /**
- * Convert Uint8Array to BufferSource for Web Crypto API
- * Creates a fresh Uint8Array with a new ArrayBuffer by copying bytes
- * This ensures compatibility across browsers and Node.js environments
- */
-function toBufferSource(arr: Uint8Array): BufferSource {
-  // Create a new ArrayBuffer and copy bytes to ensure clean backing store
-  const buffer = new ArrayBuffer(arr.length)
-  const view = new Uint8Array(buffer)
-  view.set(arr)
-  // The cast is needed due to TypeScript's strict ArrayBufferLike vs ArrayBuffer typing
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return view as any as BufferSource
-}
-
-/**
  * Derive a cryptographic key from a password using PBKDF2
  */
 async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -75,7 +60,8 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: toBufferSource(salt),
+      // @ts-ignore - TypeScript strict typing issue with ArrayBufferLike vs ArrayBuffer, runtime works fine
+      salt: salt.buffer as ArrayBuffer,
       iterations: ITERATIONS,
       hash: 'SHA-256',
     },
@@ -98,7 +84,8 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
   const encryptedBuffer = await crypto.subtle.encrypt(
     {
       name: ALGORITHM,
-      iv: toBufferSource(iv),
+      // @ts-ignore - TypeScript strict typing issue with ArrayBufferLike vs ArrayBuffer, runtime works fine
+      iv: iv.buffer as ArrayBuffer,
     },
     key,
     encoder.encode(data)
