@@ -9,6 +9,11 @@
   justify-content: space-around;
   padding: var(--space-sm) 0;
   z-index: 100;
+  /* Mobile viewport fixes */
+  padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+  /* Prevent iOS Safari scroll issues */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .nav-item {

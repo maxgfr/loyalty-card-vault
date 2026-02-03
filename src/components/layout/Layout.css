@@ -7,12 +7,14 @@
 
 .main-content {
   flex: 1;
-  padding-bottom: 80px; /* Space for bottom navigation */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom)); /* Space for bottom navigation */
   width: 100%;
+  /* Prevent overscroll on iOS */
+  overscroll-behavior-y: contain;
 }
 
 @media (max-width: 768px) {
   .main-content {
-    padding-bottom: 70px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
   }
 }
