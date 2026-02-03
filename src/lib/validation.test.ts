@@ -111,5 +111,74 @@ describe('validation schemas', () => {
       expect(validator.safeParse('ABC-123').success).toBe(true)
       expect(validator.safeParse('abc123').success).toBe(false) // Lowercase not allowed
     })
+
+    it('should validate EAN-8 format', () => {
+      const validator = barcodeDataValidators.EAN_8
+      expect(validator.safeParse('12345678').success).toBe(true)
+      expect(validator.safeParse('1234567').success).toBe(false) // Too short
+      expect(validator.safeParse('123456789').success).toBe(false) // Too long
+      expect(validator.safeParse('1234567a').success).toBe(false) // Non-numeric
+    })
+
+    it('should validate UPC-E format', () => {
+      const validator = barcodeDataValidators.UPC_E
+      expect(validator.safeParse('12345678').success).toBe(true)
+      expect(validator.safeParse('1234567').success).toBe(false) // Too short
+      expect(validator.safeParse('123456789').success).toBe(false) // Too long
+    })
+
+    it('should validate CODE_128 format', () => {
+      const validator = barcodeDataValidators.CODE_128
+      expect(validator.safeParse('ABC123').success).toBe(true)
+      expect(validator.safeParse('abc123').success).toBe(true) // Case insensitive
+      expect(validator.safeParse('ABC-123 xyz').success).toBe(true) // Allows spaces and special chars
+      expect(validator.safeParse('').success).toBe(false) // Empty not allowed
+    })
+
+    it('should validate ITF format', () => {
+      const validator = barcodeDataValidators.ITF
+      expect(validator.safeParse('12345678901234').success).toBe(true) // Even length
+      expect(validator.safeParse('1234567890').success).toBe(true) // Even length
+      expect(validator.safeParse('123').success).toBe(false) // Odd length
+      expect(validator.safeParse('12345').success).toBe(false) // Odd length
+      expect(validator.safeParse('1234a678').success).toBe(false) // Non-numeric
+    })
+
+    it('should validate CODABAR format', () => {
+      const validator = barcodeDataValidators.CODABAR
+      expect(validator.safeParse('A123456B').success).toBe(true)
+      expect(validator.safeParse('C12-34.56D').success).toBe(true)
+      expect(validator.safeParse('A$123:45/B').success).toBe(true)
+      expect(validator.safeParse('a123456b').success).toBe(false) // Must be uppercase
+      expect(validator.safeParse('123456').success).toBe(false) // Must start/end with A-D
+      expect(validator.safeParse('').success).toBe(false) // Empty not allowed
+    })
+
+    it('should validate DATA_MATRIX format', () => {
+      const validator = barcodeDataValidators.DATA_MATRIX
+      expect(validator.safeParse('Any data here').success).toBe(true)
+      expect(validator.safeParse('123').success).toBe(true)
+      expect(validator.safeParse('ABC-xyz-123').success).toBe(true)
+      expect(validator.safeParse('').success).toBe(false) // Empty not allowed
+    })
+
+    it('should have validators for all supported formats', () => {
+      const supportedFormats = [
+        'QR_CODE',
+        'EAN_13',
+        'EAN_8',
+        'CODE_128',
+        'CODE_39',
+        'UPC_A',
+        'UPC_E',
+        'ITF',
+        'CODABAR',
+        'DATA_MATRIX',
+      ]
+
+      supportedFormats.forEach(format => {
+        expect(barcodeDataValidators[format as keyof typeof barcodeDataValidators]).toBeDefined()
+      })
+    })
   })
 })
