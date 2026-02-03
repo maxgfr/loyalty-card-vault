@@ -32,16 +32,20 @@
 .scanner-view {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  align-items: center;
+  justify-content: center;
 }
 
 .scanner-video {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: auto;
-  border-radius: var(--radius-lg);
+  height: 100%;
+  object-fit: cover;
   background: black;
 }
 
@@ -50,7 +54,7 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 80px;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,10 +69,44 @@
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
 }
 
+.scanner-camera-overlay {
+  position: absolute;
+  top: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.camera-select-overlay {
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  color: white;
+  cursor: pointer;
+  min-width: 200px;
+  text-align: center;
+}
+
+.camera-select-overlay:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
 .scanner-stop {
+  position: absolute;
+  bottom: var(--space-xl);
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
   animation: pulse 2s ease-in-out infinite;
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  pointer-events: auto;
 }
 
 @keyframes pulse {

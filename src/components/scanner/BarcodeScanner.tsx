@@ -26,8 +26,20 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
     }
   }, [stopScanning])
 
-  const handleStart = async () => {
-    await startScanning(videoRef)
+  // Auto-start scanning when permission is granted and camera is selected
+  useEffect(() => {
+    if (hasPermission && selectedCamera && !isScanning && videoRef.current) {
+      startScanning(videoRef)
+    }
+  }, [hasPermission, selectedCamera, isScanning, startScanning])
+
+  const handleCameraChange = async (newCameraId: string) => {
+    const wasScanning = isScanning
+    if (wasScanning) {
+      stopScanning()
+    }
+    setSelectedCamera(newCameraId)
+    // Scanning will auto-restart via the useEffect above
   }
 
   return (
@@ -51,41 +63,31 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
           </div>
         )}
 
-        {hasPermission && !isScanning && (
-          <div className="scanner-prompt">
-            {cameras.length > 1 && (
-              <div className="scanner-camera-select">
-                <label htmlFor="camera-select">Select Camera:</label>
-                <select
-                  id="camera-select"
-                  value={selectedCamera}
-                  onChange={(e) => setSelectedCamera(e.target.value)}
-                  className="camera-select-dropdown"
-                >
-                  {cameras.map(camera => (
-                    <option key={camera.deviceId} value={camera.deviceId}>
-                      {camera.label || `Camera ${cameras.indexOf(camera) + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <Button onClick={handleStart} variant="primary">
-              Start Scanning
-            </Button>
-          </div>
-        )}
-
         {hasPermission && (
-          <div className="scanner-view" style={{ display: isScanning ? 'block' : 'none' }}>
+          <div className="scanner-view">
             <video ref={videoRef} className="scanner-video" playsInline />
             {isScanning && (
               <>
                 <div className="scanner-overlay">
                   <div className="scanner-frame" />
                 </div>
-                <Button onClick={stopScanning} variant="primary" className="scanner-stop">
-                  ⏹️ Stop Scanning
+                {cameras.length > 1 && (
+                  <div className="scanner-camera-overlay">
+                    <select
+                      value={selectedCamera}
+                      onChange={(e) => handleCameraChange(e.target.value)}
+                      className="camera-select-overlay"
+                    >
+                      {cameras.map(camera => (
+                        <option key={camera.deviceId} value={camera.deviceId}>
+                          {camera.label || `Camera ${cameras.indexOf(camera) + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <Button onClick={stopScanning} variant="danger" className="scanner-stop">
+                  ⏹️ Stop
                 </Button>
               </>
             )}
