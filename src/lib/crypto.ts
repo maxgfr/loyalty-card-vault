@@ -46,14 +46,17 @@ function generateIV(): Uint8Array {
 
 /**
  * Convert Uint8Array to BufferSource for Web Crypto API
- * Creates a new Uint8Array to ensure proper ArrayBuffer type
+ * Creates a fresh Uint8Array with a new ArrayBuffer by copying bytes
  * This ensures compatibility across browsers and Node.js environments
  */
 function toBufferSource(arr: Uint8Array): BufferSource {
-  // Create a new Uint8Array from the data to ensure clean ArrayBuffer
+  // Create a new ArrayBuffer and copy bytes to ensure clean backing store
+  const buffer = new ArrayBuffer(arr.length)
+  const view = new Uint8Array(buffer)
+  view.set(arr)
   // The cast is needed due to TypeScript's strict ArrayBufferLike vs ArrayBuffer typing
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new Uint8Array(arr) as any as BufferSource
+  return view as any as BufferSource
 }
 
 /**
