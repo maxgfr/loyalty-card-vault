@@ -21,7 +21,13 @@ export function useScanner() {
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+      // Request back camera specifically on mobile devices
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const constraints: MediaStreamConstraints = {
+        video: isMobile ? { facingMode: { ideal: 'environment' } } : true
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       stream.getTracks().forEach(track => track.stop())
       setHasPermission(true)
       setError(null)

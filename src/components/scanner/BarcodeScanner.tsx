@@ -29,17 +29,16 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
   // Auto-start scanning when permission is granted and camera is selected
   useEffect(() => {
     if (hasPermission && selectedCamera && !isScanning && videoRef.current) {
-      startScanning(videoRef)
+      startScanning(videoRef, selectedCamera)
     }
   }, [hasPermission, selectedCamera, isScanning, startScanning])
 
-  const handleCameraChange = async (newCameraId: string) => {
-    const wasScanning = isScanning
-    if (wasScanning) {
+  const handleCameraChange = (newCameraId: string) => {
+    if (isScanning) {
       stopScanning()
     }
     setSelectedCamera(newCameraId)
-    // Scanning will auto-restart via the useEffect above
+    // The useEffect above will automatically restart scanning with the new camera
   }
 
   return (
@@ -74,7 +73,7 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
                 {cameras.length > 1 && (
                   <div className="scanner-camera-overlay">
                     <select
-                      value={selectedCamera}
+                      value={selectedCamera || ''}
                       onChange={(e) => handleCameraChange(e.target.value)}
                       className="camera-select-overlay"
                     >
