@@ -68,11 +68,6 @@ export interface ScanResult {
 }
 
 /**
- * Storage mode for the application
- */
-export type StorageMode = 'encrypted' | 'unencrypted'
-
-/**
  * Hash route types
  */
 export type Route =

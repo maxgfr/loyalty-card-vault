@@ -125,15 +125,6 @@ export async function decrypt(payload: EncryptedPayload, password: string): Prom
 }
 
 /**
- * Hash a string using SHA-256
- */
-export async function hashString(data: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data))
-  return arrayBufferToBase64(hashBuffer)
-}
-
-/**
  * Generate a unique ID
  */
 export function generateId(): string {

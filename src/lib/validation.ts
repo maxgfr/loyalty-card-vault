@@ -63,14 +63,9 @@ export const cardSchema = z.object({
 })
 
 /**
- * Card creation schema (without id, timestamps)
- */
-export const cardCreateSchema = cardSchema
-
-/**
  * Encrypted payload schema
  */
-export const encryptedPayloadSchema = z.object({
+const encryptedPayloadSchema = z.object({
   iv: z.string(),
   data: z.string(),
   salt: z.string(),
@@ -84,16 +79,6 @@ export const backupSchema = z.object({
   exportedAt: z.number().int().positive(),
   encrypted: z.boolean(),
   cards: z.union([z.array(z.any()), encryptedPayloadSchema]),
-})
-
-/**
- * App settings schema
- */
-export const settingsSchema = z.object({
-  useEncryption: z.boolean(),
-  theme: z.enum(['light', 'dark', 'auto']),
-  defaultBarcodeFormat: barcodeFormatSchema,
-  lastBackupAt: z.number().int().positive().optional(),
 })
 
 /**
@@ -117,13 +102,6 @@ export function validateCard(data: unknown): z.infer<typeof cardSchema> {
  */
 export function validateBackup(data: unknown): z.infer<typeof backupSchema> {
   return backupSchema.parse(data)
-}
-
-/**
- * Validate settings
- */
-export function validateSettings(data: unknown): z.infer<typeof settingsSchema> {
-  return settingsSchema.parse(data)
 }
 
 /**

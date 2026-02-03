@@ -293,7 +293,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             onClick={() => toggleHelpSection('installation')}
           >
             <span className="help-icon">📱</span>
-            <span className="help-section-title">How to install the app?</span>
+            <span className="help-section-title">Installation</span>
             <span className="help-arrow">{openHelpSection === 'installation' ? '▼' : '▶'}</span>
           </button>
 
@@ -358,7 +358,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             onClick={() => toggleHelpSection('usage')}
           >
             <span className="help-icon">📖</span>
-            <span className="help-section-title">How to use the app?</span>
+            <span className="help-section-title">Usage Guide</span>
             <span className="help-arrow">{openHelpSection === 'usage' ? '▼' : '▶'}</span>
           </button>
 
@@ -421,7 +421,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             onClick={() => toggleHelpSection('faq')}
           >
             <span className="help-icon">❓</span>
-            <span className="help-section-title">Frequently Asked Questions</span>
+            <span className="help-section-title">FAQ</span>
             <span className="help-arrow">{openHelpSection === 'faq' ? '▼' : '▶'}</span>
           </button>
 
@@ -448,21 +448,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
               </div>
 
               <div className="help-faq">
-                <h4>Can I add notes to my cards?</h4>
-                <p>Yes! When editing a card, there's a Notes field. Use it to store PIN codes, membership numbers, or any useful info. Notes appear below the tags on the card detail page.</p>
-              </div>
-
-              <div className="help-faq">
-                <h4>What is the flip animation on cards?</h4>
-                <p>Tap any card in detail view to flip it! The front shows the card design, the back shows the barcode for scanning at checkout.</p>
-              </div>
-
-              <div className="help-faq">
-                <h4>Can I export cards as images?</h4>
-                <p>Yes! Open a card and tap <strong>Export as Image</strong>. Perfect for using the card in other apps or keeping a visual backup.</p>
-              </div>
-
-              <div className="help-faq">
                 <h4>Which barcode formats are supported?</h4>
                 <p>Almost all formats: QR Code, EAN-13/8, UPC-A/E, CODE-128/39, ITF-14, Codabar, Data Matrix, and more.</p>
               </div>
@@ -470,11 +455,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
               <div className="help-faq">
                 <h4>Can I use tags to organize my cards?</h4>
                 <p>Yes! Tags help you categorize cards (e.g., "Grocery", "Retail", "Gas"). Add tags when creating or editing a card.</p>
-              </div>
-
-              <div className="help-faq">
-                <h4>What if I forget my password?</h4>
-                <p>Unfortunately, your data cannot be recovered. Encryption is mandatory for security, which means no password recovery is possible. <strong>Make regular backups!</strong></p>
               </div>
 
               <div className="help-faq">

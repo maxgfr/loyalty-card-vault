@@ -4,7 +4,7 @@ import { getStoresForCountry, getStoreColorsMap } from './stores'
 /**
  * Store-specific color associations (generated from store data)
  */
-export const STORE_COLORS: Record<string, string> = getStoreColorsMap()
+const STORE_COLORS: Record<string, string> = getStoreColorsMap()
 
 /**
  * Auto-detect barcode format from data

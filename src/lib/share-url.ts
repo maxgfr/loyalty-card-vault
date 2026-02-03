@@ -57,14 +57,3 @@ export async function decodeShareURL(encodedData: string, password: string): Pro
   }
 }
 
-/**
- * Generate a QR code data URL for sharing
- */
-export async function createShareQRCode(url: string): Promise<string> {
-  const QRCode = await import('qrcode')
-  return QRCode.toDataURL(url, {
-    errorCorrectionLevel: 'L',
-    margin: 1,
-    width: 400,
-  })
-}

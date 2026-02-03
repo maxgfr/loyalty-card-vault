@@ -21,19 +21,9 @@ interface CardVaultDB {
 let dbInstance: IDBPDatabase<CardVaultDB> | null = null
 
 /**
- * Reset the database instance cache (useful for testing or after database deletion)
- */
-export function resetDBInstance(): void {
-  if (dbInstance) {
-    dbInstance.close()
-    dbInstance = null
-  }
-}
-
-/**
  * Initialize the IndexedDB database
  */
-export async function initDB(): Promise<IDBPDatabase<CardVaultDB>> {
+async function initDB(): Promise<IDBPDatabase<CardVaultDB>> {
   if (dbInstance) {
     return dbInstance
   }
@@ -120,7 +110,7 @@ export async function saveCard(card: LoyaltyCard, password?: string): Promise<vo
 /**
  * Get a specific loyalty card by ID
  */
-export async function getCard(id: string, password?: string): Promise<LoyaltyCard | null> {
+async function getCard(id: string, password?: string): Promise<LoyaltyCard | null> {
   try {
     const db = await initDB()
     const data = await db.get(CARDS_STORE, id)
@@ -175,16 +165,6 @@ export async function deleteCard(id: string): Promise<void> {
   await db.delete(CARDS_STORE, id)
 }
 
-/**
- * Delete all cards
- */
-export async function deleteAllCards(): Promise<void> {
-  const db = await initDB()
-  const allKeys = await db.getAllKeys(CARDS_STORE)
-  for (const key of allKeys) {
-    await db.delete(CARDS_STORE, key)
-  }
-}
 
 /**
  * Get raw encrypted or unencrypted data (for backup)
@@ -256,15 +236,6 @@ export async function importCardsRaw(
 export async function updateTheme(theme: 'light' | 'dark' | 'auto'): Promise<void> {
   const db = await initDB()
   await db.put(SETTINGS_STORE, theme, 'theme')
-}
-
-/**
- * Get current theme setting
- */
-export async function getTheme(): Promise<'light' | 'dark' | 'auto'> {
-  const db = await initDB()
-  const theme = (await db.get(SETTINGS_STORE, 'theme')) ?? 'auto'
-  return theme as 'light' | 'dark' | 'auto'
 }
 
 /**

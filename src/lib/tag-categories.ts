@@ -2,7 +2,7 @@
  * Predefined tag categories for loyalty cards
  */
 
-export const TAG_CATEGORIES = {
+const TAG_CATEGORIES = {
   FR: [
     'Supermarket',
     'Food',

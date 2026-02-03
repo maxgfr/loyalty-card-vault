@@ -22,7 +22,7 @@ const STORES_BY_COUNTRY: Record<CountryCode, StoreConfig[]> = {
 /**
  * Detect user's country from browser locale
  */
-export function detectUserCountry(): CountryCode {
+function detectUserCountry(): CountryCode {
   const locale = navigator.language || 'en-US'
 
   if (locale.startsWith('fr')) return 'FR'
