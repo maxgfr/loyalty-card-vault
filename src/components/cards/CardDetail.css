@@ -124,7 +124,9 @@
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
+  transform: translateZ(0);
 }
 
 .card-detail-chip-line {
@@ -159,10 +161,12 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.3);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateZ(0);
 }
 
 .card-detail-logo-text {
@@ -175,9 +179,11 @@
 .card-detail-type {
   padding: var(--space-sm) var(--space-md);
   background: rgba(255, 255, 255, 0.25);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.4);
+  transform: translateZ(0);
 }
 
 .card-detail-type-text {
@@ -324,10 +330,18 @@
   left: var(--space-xl);
   right: var(--space-xl);
   padding: var(--space-md);
-  background: rgba(255, 255, 255, 0.2);
+  /* Fallback for browsers that don't support backdrop-filter */
+  background: rgba(255, 255, 255, 0.3);
+  /* Safari support */
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
+  /* Create new stacking context for better Safari compatibility */
+  z-index: 2;
+  /* Force hardware acceleration on Safari */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .card-detail-notes {
@@ -400,6 +414,26 @@
   transform: scale(1.05);
   background: currentColor;
   color: white !important;
+}
+
+/* Notes section */
+.card-detail-notes-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.card-detail-notes-text {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 /* Actions */

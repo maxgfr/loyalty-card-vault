@@ -7,18 +7,19 @@ import './AddCardPage.css'
 interface AddCardPageProps {
   onBack: () => void
   onAdd: (card: Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
+  onNavigateHome: () => void
   barcodeData?: string
   barcodeFormat?: BarcodeFormat
 }
 
-export function AddCardPage({ onBack, onAdd, barcodeData, barcodeFormat }: AddCardPageProps) {
+export function AddCardPage({ onBack, onAdd, onNavigateHome, barcodeData, barcodeFormat }: AddCardPageProps) {
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (cardData: Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       setError(null)
       await onAdd(cardData)
-      onBack()
+      onNavigateHome()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add card')
     }

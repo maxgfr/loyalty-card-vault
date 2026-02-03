@@ -45,7 +45,6 @@ describe('useCards', () => {
 
     expect(result.current.cards).toEqual(mockCards)
     expect(result.current.error).toBe(null)
-    expect(result.current.isLocked).toBe(false)
   })
 
   it('handles loading error', async () => {
@@ -59,7 +58,6 @@ describe('useCards', () => {
 
     expect(result.current.cards).toEqual([])
     expect(result.current.error).toBe('Database error')
-    expect(result.current.isLocked).toBe(true)
   })
 
   it('adds a new card', async () => {
@@ -160,13 +158,7 @@ describe('useCards', () => {
     })
   })
 
-  it('locks and unlocks vault', async () => {
-    vi.mocked(storage.getSettings).mockResolvedValue({
-      useEncryption: true,
-      theme: 'auto',
-      defaultBarcodeFormat: 'QR_CODE',
-    })
-
+  it('refreshes cards', async () => {
     const mockCards = [
       {
         id: '1',
@@ -180,7 +172,7 @@ describe('useCards', () => {
       },
     ]
 
-    vi.mocked(storage.getAllCards).mockResolvedValue(mockCards)
+    vi.mocked(storage.getAllCards).mockResolvedValue([])
 
     const { result } = renderHook(() => useCards())
 
@@ -188,22 +180,16 @@ describe('useCards', () => {
       expect(result.current.isLoading).toBe(false)
     })
 
-    act(() => {
-      result.current.lockVault()
-    })
+    expect(result.current.cards).toHaveLength(0)
 
-    await waitFor(() => {
-      expect(result.current.cards).toHaveLength(0)
-      expect(result.current.isLocked).toBe(true)
-    })
+    vi.mocked(storage.getAllCards).mockResolvedValue(mockCards)
 
     await act(async () => {
-      await result.current.unlockVault('test-password')
+      await result.current.refreshCards()
     })
 
     await waitFor(() => {
       expect(result.current.cards).toHaveLength(1)
-      expect(result.current.isLocked).toBe(false)
     })
   })
 

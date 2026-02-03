@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import QRCode from 'qrcode'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -14,6 +15,22 @@ interface ShareURLModalProps {
 export function ShareURLModal({ isOpen, onClose, url, password }: ShareURLModalProps) {
   const [copiedUrl, setCopiedUrl] = useState(false)
   const [copiedPassword, setCopiedPassword] = useState(false)
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    if (isOpen && url && qrCanvasRef.current) {
+      QRCode.toCanvas(qrCanvasRef.current, url, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+      }).catch((err) => {
+        console.error('Failed to generate QR code:', err)
+      })
+    }
+  }, [isOpen, url])
 
   const copyToClipboard = async (text: string, type: 'url' | 'password') => {
     try {
@@ -104,8 +121,12 @@ export function ShareURLModal({ isOpen, onClose, url, password }: ShareURLModalP
         </div>
 
         <div className="share-url-modal-qr">
+          <label className="share-url-modal-label">QR Code</label>
+          <div className="share-url-modal-qr-container">
+            <canvas ref={qrCanvasRef} className="share-url-modal-qr-canvas" />
+          </div>
           <p className="share-url-modal-qr-hint">
-            💡 Tip: Share this URL via any messaging app, email, or QR code scanner.
+            💡 Scan this QR code to share the URL quickly
           </p>
         </div>
       </div>

@@ -113,14 +113,6 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
                   )}
                 </div>
 
-                {/* Card number */}
-                <div className="card-detail-card-number">
-                  <span className="card-detail-number-dots">••••</span>
-                  <span className="card-detail-number-dots">••••</span>
-                  <span className="card-detail-number-dots">••••</span>
-                  <span className="card-detail-number-last">{card.barcodeData.slice(-4)}</span>
-                </div>
-
                 {/* Meta info */}
                 <div className="card-detail-card-footer">
                   <div className="card-detail-card-meta">
@@ -163,13 +155,6 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
                 <p className="card-detail-barcode-data">{card.barcodeData}</p>
               </div>
 
-              {/* Notes */}
-              {card.notes && (
-                <div className="card-detail-notes-section">
-                  <p className="card-detail-notes">{card.notes}</p>
-                </div>
-              )}
-
               <div className="card-detail-flip-hint">Tap to flip</div>
             </div>
           </div>
@@ -186,6 +171,14 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+
+        {card.notes && (
+          <div className="card-detail-notes-container">
+            <h3 className="card-detail-section-title">Notes</h3>
+            <p className="card-detail-notes-text">{card.notes}</p>
           </div>
         )}
 

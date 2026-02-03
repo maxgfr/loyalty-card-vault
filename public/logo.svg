@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+
+  <!-- Stacked cards effect -->
+  <!-- Back card (darker) -->
+  <rect x="130" y="110" width="280" height="180" rx="20" fill="#4338ca" opacity="0.5"/>
+
+  <!-- Main card -->
+  <rect x="110" y="130" width="320" height="200" rx="20" fill="white"/>
+
+  <!-- Card chip -->
+  <rect x="140" y="160" width="50" height="40" rx="6" fill="#e2e8f0"/>
+  <line x1="145" y1="175" x2="185" y2="175" stroke="#94a3b8" stroke-width="2"/>
+  <line x1="145" y1="185" x2="185" y2="185" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- Barcode -->
+  <g fill="#6366f1">
+    <rect x="140" y="220" width="6" height="50" rx="1"/>
+    <rect x="152" y="220" width="4" height="50" rx="1"/>
+    <rect x="162" y="220" width="8" height="50" rx="1"/>
+    <rect x="176" y="220" width="4" height="50" rx="1"/>
+    <rect x="186" y="220" width="6" height="50" rx="1"/>
+    <rect x="198" y="220" width="12" height="50" rx="1"/>
+    <rect x="216" y="220" width="4" height="50" rx="1"/>
+    <rect x="226" y="220" width="8" height="50" rx="1"/>
+    <rect x="240" y="220" width="4" height="50" rx="1"/>
+    <rect x="250" y="220" width="10" height="50" rx="1"/>
+    <rect x="266" y="220" width="4" height="50" rx="1"/>
+    <rect x="276" y="220" width="6" height="50" rx="1"/>
+    <rect x="288" y="220" width="14" height="50" rx="1"/>
+    <rect x="308" y="220" width="4" height="50" rx="1"/>
+    <rect x="318" y="220" width="8" height="50" rx="1"/>
+    <rect x="332" y="220" width="6" height="50" rx="1"/>
+    <rect x="344" y="220" width="4" height="50" rx="1"/>
+    <rect x="354" y="220" width="10" height="50" rx="1"/>
+    <rect x="370" y="220" width="4" height="50" rx="1"/>
+    <rect x="380" y="220" width="8" height="50" rx="1"/>
+    <rect x="394" y="220" width="6" height="50" rx="1"/>
+  </g>
+
+  <!-- Lock icon (security) -->
+  <circle cx="380" cy="170" r="30" fill="#6366f1"/>
+  <path d="M370 165v-8c0-5.5 4.5-10 10-10s10 4.5 10 10v8h-20z" fill="white" opacity="0.9"/>
+  <rect x="368" y="168" width="24" height="18" rx="3" fill="white"/>
+  <circle cx="380" cy="177" r="3" fill="#6366f1"/>
+</svg>

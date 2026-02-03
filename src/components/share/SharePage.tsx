@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LoyaltyCard } from '../../types'
 import { Header } from '../layout/Header'
 import { Button } from '../ui/Button'
@@ -19,6 +19,15 @@ export function SharePage({ encodedData, onBack, onImport }: SharePageProps) {
   const [error, setError] = useState<string | null>(null)
   const [isDecrypting, setIsDecrypting] = useState(false)
   const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set())
+
+  // Reset state when share URL changes
+  useEffect(() => {
+    setPassword('')
+    setDecryptedCards(null)
+    setError(null)
+    setIsDecrypting(false)
+    setSelectedCards(new Set())
+  }, [encodedData])
 
   const handleDecrypt = async () => {
     if (!password) {

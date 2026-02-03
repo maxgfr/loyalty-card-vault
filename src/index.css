@@ -1,15 +1,26 @@
+/* Default - Dark Theme */
 :root {
-  /* Colors - Dark Theme */
+  /* Colors */
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
+  --color-primary-bg: rgba(99, 102, 241, 0.1);
   --color-background: #0f0f23;
+  --color-bg: #0f0f23;
+  --color-bg-secondary: #1a1a2e;
   --color-surface: #1a1a2e;
   --color-surface-hover: #252539;
   --color-text: #e2e8f0;
-  --color-text-muted: #94a3b8;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-tertiary: #475569;
   --color-border: #2d3748;
+  --color-success: #10b981;
   --color-danger: #ef4444;
   --color-danger-dark: #dc2626;
+  --color-danger-bg: rgba(239, 68, 68, 0.1);
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -44,13 +55,32 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Light Theme - via class */
+:root.theme-light {
+  --color-background: #f8fafc;
+  --color-bg: #f8fafc;
+  --color-bg-secondary: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-text: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-tertiary: #cbd5e1;
+  --color-border: #e2e8f0;
+}
+
+/* Light Theme - via system preference (when no class set) */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not(.theme-dark) {
     --color-background: #f8fafc;
+    --color-bg: #f8fafc;
+    --color-bg-secondary: #ffffff;
     --color-surface: #ffffff;
     --color-surface-hover: #f1f5f9;
     --color-text: #1e293b;
-    --color-text-muted: #64748b;
+    --color-text-secondary: #475569;
+    --color-text-muted: #94a3b8;
+    --color-text-tertiary: #cbd5e1;
     --color-border: #e2e8f0;
   }
 }
@@ -66,6 +96,7 @@ body {
   min-height: 100vh;
   background: var(--color-background);
   color: var(--color-text);
+  transition: background var(--transition-normal), color var(--transition-normal);
 }
 
 #root {

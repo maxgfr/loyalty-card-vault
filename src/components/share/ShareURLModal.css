@@ -66,11 +66,29 @@
 }
 
 .share-url-modal-qr {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share-url-modal-qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  background: var(--color-bg-secondary);
+  border-radius: 8px;
+}
+
+.share-url-modal-qr-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .share-url-modal-qr-hint {
   margin: 0;
   font-size: 0.75rem;
   color: var(--color-text-secondary);
+  text-align: center;
 }

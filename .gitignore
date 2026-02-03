@@ -26,3 +26,7 @@ lerna-debug.log*
 
 # PWA
 dev-dist
+
+# Playwright
+test-results/
+playwright-report/

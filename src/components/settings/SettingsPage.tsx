@@ -1,17 +1,23 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Header } from '../layout/Header'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
-import { Input } from '../ui/Input'
+import { ShareURLModal } from '../share/ShareURLModal'
 import { exportBackup, importBackup, downloadBackup } from '../../lib/backup'
-import { isEncryptionEnabled, getSettings, updateTheme, clearAllData } from '../../lib/storage'
+import { getSettings, updateTheme, clearAllData, getAllCards } from '../../lib/storage'
+import { createShareURL } from '../../lib/share-url'
 import type { AppSettings } from '../../types'
 import './SettingsPage.css'
 
 interface SettingsPageProps {
   onBack: () => void
   onRefreshCards: () => void
+}
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
 function navigateToHelp() {
@@ -21,21 +27,51 @@ function navigateToHelp() {
 type ThemeOption = 'light' | 'dark' | 'auto'
 
 export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
-  const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showResetModal, setShowResetModal] = useState(false)
-  const [password, setPassword] = useState('')
-  const [isExporting, setIsExporting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [shareUrl, setShareUrl] = useState<{ url: string; password: string } | null>(null)
+  const [isSharing, setIsSharing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const loadSettings = useCallback(async () => {
+    const currentSettings = await getSettings()
+    setSettings(currentSettings)
+    applyTheme(currentSettings.theme)
+  }, [])
 
   useEffect(() => {
     loadSettings()
-  }, [])
 
-  const loadSettings = async () => {
-    const currentSettings = await getSettings()
-    setSettings(currentSettings)
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true)
+    }
+
+    // Listen for PWA install prompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [loadSettings])
+
+  const applyTheme = (theme: ThemeOption) => {
+    const root = document.documentElement
+    root.classList.remove('theme-light', 'theme-dark')
+
+    if (theme === 'auto') {
+      // Let CSS @media query handle it
+    } else {
+      root.classList.add(`theme-${theme}`)
+    }
   }
 
   const handleThemeChange = async (theme: ThemeOption) => {
@@ -44,42 +80,13 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     applyTheme(theme)
   }
 
-  const applyTheme = (theme: ThemeOption) => {
-    const root = document.documentElement
-    root.classList.remove('theme-light', 'theme-dark', 'theme-auto')
-
-    if (theme === 'auto') {
-      root.classList.add('theme-auto')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      root.classList.toggle('theme-dark', prefersDark)
-      root.classList.toggle('theme-light', !prefersDark)
-    } else {
-      root.classList.add(`theme-${theme}`)
-    }
-  }
-
   const handleExport = async () => {
-    const encrypted = await isEncryptionEnabled()
-
-    if (encrypted) {
-      setIsExporting(true)
-      setShowPasswordModal(true)
-    } else {
-      await performExport()
-    }
-  }
-
-  const performExport = async (pwd?: string) => {
     try {
-      const blob = await exportBackup(pwd)
+      const blob = await exportBackup()
       downloadBackup(blob)
       setMessage({ type: 'success', text: 'Backup exported successfully' })
-      setShowPasswordModal(false)
-      setPassword('')
     } catch {
       setMessage({ type: 'error', text: 'Failed to export backup' })
-    } finally {
-      setIsExporting(false)
     }
   }
 
@@ -92,35 +99,11 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     if (!file) return
 
     try {
-      // Read the file to check if it's encrypted
-      const text = await file.text()
-      const backupData = JSON.parse(text)
-
-      // Check if the backup file is encrypted
-      if (backupData.encrypted) {
-        setIsExporting(false)
-        setShowPasswordModal(true)
-        fileInputRef.current!.dataset.file = 'pending'
-      } else {
-        await performImport(file)
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Invalid backup file' })
-    }
-  }
-
-  const performImport = async (file?: File, pwd?: string) => {
-    const targetFile = file || (fileInputRef.current?.dataset.file === 'pending' ? fileInputRef.current?.files?.[0] : null)
-    if (!targetFile) return
-
-    try {
-      const result = await importBackup(targetFile, pwd)
+      const result = await importBackup(file)
 
       if (result.success) {
         setMessage({ type: 'success', text: `Imported ${result.cardCount} cards successfully` })
         onRefreshCards()
-        setShowPasswordModal(false)
-        setPassword('')
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to import backup' })
       }
@@ -129,16 +112,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
-        delete fileInputRef.current.dataset.file
       }
-    }
-  }
-
-  const handlePasswordSubmit = () => {
-    if (isExporting) {
-      performExport(password)
-    } else {
-      performImport(undefined, password)
     }
   }
 
@@ -152,6 +126,42 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
       }, 1500)
     } catch {
       setMessage({ type: 'error', text: 'Failed to clear data' })
+    }
+  }
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) {
+      setMessage({ type: 'error', text: 'Installation not available. Try using Chrome or Edge.' })
+      return
+    }
+
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+
+    if (outcome === 'accepted') {
+      setMessage({ type: 'success', text: 'App installed successfully!' })
+      setIsInstalled(true)
+    }
+
+    setDeferredPrompt(null)
+  }
+
+  const handleShareAllCards = async () => {
+    try {
+      setIsSharing(true)
+      const cards = await getAllCards()
+
+      if (cards.length === 0) {
+        setMessage({ type: 'error', text: 'No cards to share. Add some cards first!' })
+        return
+      }
+
+      const result = await createShareURL(cards)
+      setShareUrl(result)
+    } catch (error) {
+      setMessage({ type: 'error', text: `Failed to create share URL: ${error instanceof Error ? error.message : 'Unknown error'}` })
+    } finally {
+      setIsSharing(false)
     }
   }
 
@@ -200,15 +210,19 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         </Card>
 
         <Card>
-          <h3 className="settings-section-title">🔐 Encryption Status</h3>
+          <h3 className="settings-section-title">📤 Share All Cards</h3>
           <p className="settings-section-description">
-            All your cards are encrypted with AES-256 encryption for maximum security.
+            Share all your cards with friends or family using a secure link and QR code
           </p>
-          <div className="encryption-status">
-            <div className="encryption-status-badge">
-              <span className="encryption-status-indicator encryption-status-indicator--enabled" />
-              <span className="encryption-status-text">Always Enabled</span>
-            </div>
+          <div className="settings-actions">
+            <Button
+              variant="primary"
+              onClick={handleShareAllCards}
+              fullWidth
+              disabled={isSharing}
+            >
+              {isSharing ? 'Generating...' : '📤 Share All Cards'}
+            </Button>
           </div>
         </Card>
 
@@ -218,11 +232,11 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             Export your cards to a file or import from a previous backup
           </p>
           <div className="settings-actions">
-            <Button variant="primary" onClick={handleExport} fullWidth>
-              Export Backup
+            <Button variant="secondary" onClick={handleExport} fullWidth>
+              📥 Export Backup
             </Button>
             <Button variant="secondary" onClick={handleImport} fullWidth>
-              Import Backup
+              📤 Import Backup
             </Button>
           </div>
           <input
@@ -255,13 +269,21 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         )}
 
         <Card>
-          <h3 className="settings-section-title">Help & Installation</h3>
+          <h3 className="settings-section-title">📱 Installation</h3>
           <p className="settings-section-description">
-            How to install the app, scan cards, and more
+            {isInstalled
+              ? 'App is installed on your device'
+              : 'Install the app on your device for offline access and a better experience'
+            }
           </p>
           <div className="settings-actions">
-            <Button variant="primary" onClick={navigateToHelp} fullWidth>
-              📱 View Help Guide
+            {!isInstalled && deferredPrompt && (
+              <Button variant="primary" onClick={handleInstallApp} fullWidth>
+                📲 Install App
+              </Button>
+            )}
+            <Button variant={isInstalled || deferredPrompt ? "secondary" : "primary"} onClick={navigateToHelp} fullWidth>
+              📚 View Help Guide
             </Button>
           </div>
         </Card>
@@ -276,31 +298,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           </p>
         </Card>
       </div>
-
-      <Modal
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        title={isExporting ? 'Enter Password to Export' : 'Enter Password to Import'}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowPasswordModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={handlePasswordSubmit}>
-              Continue
-            </Button>
-          </>
-        }
-      >
-        <Input
-          type="password"
-          label="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          fullWidth
-          autoFocus
-        />
-      </Modal>
 
       <Modal
         isOpen={showResetModal}
@@ -324,6 +321,13 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           You will need to go through the setup process again after resetting.
         </p>
       </Modal>
+
+      <ShareURLModal
+        isOpen={shareUrl !== null}
+        onClose={() => setShareUrl(null)}
+        url={shareUrl?.url || ''}
+        password={shareUrl?.password || ''}
+      />
 
     </div>
   )

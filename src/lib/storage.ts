@@ -21,6 +21,16 @@ interface CardVaultDB {
 let dbInstance: IDBPDatabase<CardVaultDB> | null = null
 
 /**
+ * Reset the database instance cache (useful for testing or after database deletion)
+ */
+export function resetDBInstance(): void {
+  if (dbInstance) {
+    dbInstance.close()
+    dbInstance = null
+  }
+}
+
+/**
  * Initialize the IndexedDB database
  */
 export async function initDB(): Promise<IDBPDatabase<CardVaultDB>> {
@@ -66,10 +76,19 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
 
 /**
  * Get app settings
+ * @throws Error if settings don't exist (database is empty)
  */
 export async function getSettings(): Promise<AppSettings> {
   const db = await initDB()
-  const useEncryption = (await db.get(SETTINGS_STORE, 'useEncryption')) ?? false
+
+  // Check if settings exist by trying to get the useEncryption setting
+  const useEncryption = await db.get(SETTINGS_STORE, 'useEncryption')
+
+  // If useEncryption is undefined, settings don't exist - throw error
+  if (useEncryption === undefined) {
+    throw new Error('Settings not found - database is empty')
+  }
+
   const theme = (await db.get(SETTINGS_STORE, 'theme')) ?? 'auto'
   const defaultBarcodeFormat = (await db.get(SETTINGS_STORE, 'defaultBarcodeFormat')) ?? 'QR_CODE'
   const lastBackupAt = (await db.get(SETTINGS_STORE, 'lastBackupAt')) ?? undefined
