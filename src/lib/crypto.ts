@@ -60,7 +60,9 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      // @ts-ignore - TypeScript strict typing issue with ArrayBufferLike vs ArrayBuffer, runtime works fine
+      // TypeScript strict typing issue with ArrayBufferLike vs ArrayBuffer, runtime works fine in all environments
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       salt: salt.buffer as ArrayBuffer,
       iterations: ITERATIONS,
       hash: 'SHA-256',
@@ -84,7 +86,9 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
   const encryptedBuffer = await crypto.subtle.encrypt(
     {
       name: ALGORITHM,
-      // @ts-ignore - TypeScript strict typing issue with ArrayBufferLike vs ArrayBuffer, runtime works fine
+      // TypeScript strict typing issue with ArrayBufferLike vs ArrayBuffer, runtime works fine in all environments
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       iv: iv.buffer as ArrayBuffer,
     },
     key,
