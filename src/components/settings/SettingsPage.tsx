@@ -487,9 +487,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           <p className="settings-version-text">
             Version {APP_VERSION}
           </p>
-          <p className="settings-version-build">
-            Built with ❤️ • Open Source
-          </p>
         </div>
       </div>
 

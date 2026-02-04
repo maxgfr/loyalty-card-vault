@@ -33,7 +33,7 @@ export function CardBarcode({ data, format, scale = 3 }: CardBarcodeProps) {
         bcid: formatMap[format] || 'qrcode',
         text: data,
         scale,
-        height: format === 'QR_CODE' || format === 'DATA_MATRIX' ? 10 : 15,
+        height: 15,
         includetext: true,
         textxalign: 'center',
       })

@@ -2,12 +2,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: var(--space-lg);
+  width: 100%;
+  height: 100%;
   background: white;
   border-radius: var(--radius-md);
 }
 
 .barcode-canvas {
-  max-width: 100%;
-  height: auto;
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  display: block;
 }

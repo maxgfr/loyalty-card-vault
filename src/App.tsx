@@ -7,7 +7,6 @@ import { EditCardPage } from './components/cards/EditCardPage'
 import { BarcodeScanner } from './components/scanner/BarcodeScanner'
 import { SettingsPage } from './components/settings/SettingsPage'
 import { ToastContainer } from './components/ui/Toast'
-import { InstallBanner } from './components/ui/InstallBanner'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
 import { SharePage } from './components/share/SharePage'
@@ -15,11 +14,6 @@ import { getSettings, saveSettings } from './lib/storage'
 import type { ScanResult, LoyaltyCard } from './types'
 import './App.css'
 import './index.css'
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
 
 let toastIdCounter = 0
 
@@ -34,16 +28,11 @@ function applyTheme(theme: 'light' | 'dark' | 'auto') {
   // For 'auto', let CSS media query handle it
 }
 
-const INSTALL_BANNER_DISMISSED_KEY = 'installBannerDismissed'
-
 function App() {
   const { route, navigate, goBack } = useHashRouter()
   const { cards, addCard, updateCard, deleteCard, refreshCards } = useCards()
   const [isReady, setIsReady] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [showInstallBanner, setShowInstallBanner] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(false)
 
   const initializeApp = useCallback(async () => {
     try {
@@ -64,40 +53,6 @@ function App() {
 
   useEffect(() => {
     initializeApp()
-
-    // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true)
-      return
-    }
-
-    // Check if user previously dismissed the banner
-    const wasDismissed = localStorage.getItem(INSTALL_BANNER_DISMISSED_KEY)
-    if (wasDismissed) {
-      return
-    }
-
-    // Listen for PWA install prompt
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      const promptEvent = e as BeforeInstallPromptEvent
-      setDeferredPrompt(promptEvent)
-      setShowInstallBanner(true)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // For iOS, show banner after a delay
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    if (isIOS && !window.matchMedia('(display-mode: standalone)').matches) {
-      setTimeout(() => {
-        setShowInstallBanner(true)
-      }, 3000)
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    }
   }, [initializeApp])
 
   const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
@@ -149,19 +104,6 @@ function App() {
     }
   }, [deleteCard, addToast, goBack])
 
-  const handleInstallBannerDismiss = useCallback(() => {
-    setShowInstallBanner(false)
-    localStorage.setItem(INSTALL_BANNER_DISMISSED_KEY, 'true')
-  }, [])
-
-  const handleInstalled = useCallback(() => {
-    setShowInstallBanner(false)
-    setIsInstalled(true)
-    setDeferredPrompt(null)
-    addToast('App installée avec succès!')
-  }, [addToast])
-
-
   if (!isReady) {
     return (
       <div className="app-loading">
@@ -172,14 +114,6 @@ function App() {
 
   return (
     <>
-      {showInstallBanner && !isInstalled && (
-        <InstallBanner
-          deferredPrompt={deferredPrompt}
-          onInstalled={handleInstalled}
-          onDismiss={handleInstallBannerDismiss}
-        />
-      )}
-
       <Layout>
         {route.page === 'home' && (
           <CardList cards={cards} onCardClick={(id) => navigate({ page: 'card', cardId: id })} />

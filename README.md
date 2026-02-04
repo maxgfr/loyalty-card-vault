@@ -141,11 +141,3 @@ The encrypted URL sharing works as follows:
 ## 📝 License
 
 MIT
-
-## 🙏 Acknowledgments
-
-- Built with ❤️ using Claude Code
-- Icons: Unicode emoji
-- Barcode scanning: ZXing library
-- Barcode rendering: bwip-js library
-- Encryption: Web Crypto API

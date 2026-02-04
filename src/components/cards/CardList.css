@@ -9,6 +9,7 @@
   border-bottom: 1px solid var(--color-border);
   padding: var(--space-lg);
   z-index: 100;
+  width: 100%;
 }
 
 .card-list-title {
@@ -28,6 +29,9 @@
 .card-list-search {
   margin: var(--space-lg);
   margin-bottom: var(--space-md);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .card-list-tags {
@@ -38,6 +42,9 @@
   padding: var(--space-sm);
   background: var(--color-surface-hover);
   border-radius: var(--radius-md);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .card-list-tag {
@@ -65,17 +72,20 @@
 }
 
 .card-list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
   padding: 0 var(--space-lg) var(--space-lg);
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .card-list-empty {
   text-align: center;
   padding: var(--space-xl);
-  margin: 0 var(--space-lg);
+  margin: 0 auto;
   color: var(--color-text-muted);
+  max-width: 600px;
 }
 
 .card-list-empty-hint {
@@ -95,18 +105,27 @@
   .card-list-search {
     margin: var(--space-md);
     margin-bottom: var(--space-sm);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .card-list-tags {
     margin: 0 var(--space-md) var(--space-md);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .card-list-grid {
-    grid-template-columns: 1fr;
+    gap: var(--space-sm);
     padding: 0 var(--space-md) var(--space-md);
   }
 
   .card-list-empty {
-    margin: 0 var(--space-md);
+    margin: 0 auto;
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+    max-width: 600px;
   }
 }

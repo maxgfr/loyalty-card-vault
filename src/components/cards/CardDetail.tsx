@@ -87,6 +87,8 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
               <div className="card-detail-card-gradient" />
               <div className="card-detail-card-shine" />
 
+              <div className="card-detail-flip-hint card-detail-flip-hint--top">Tap to flip</div>
+
               {/* Chip */}
               <div className="card-detail-chip">
                 <div className="card-detail-chip-line" />
@@ -129,8 +131,6 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
                   </div>
                 </div>
               </div>
-
-              <div className="card-detail-flip-hint">Tap to flip</div>
             </div>
 
             {/* Back of card */}
@@ -144,18 +144,15 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
               <div className="card-detail-card-bg-pattern" />
               <div className="card-detail-card-gradient" />
 
-              {/* Magnetic stripe */}
-              <div className="card-detail-mag-stripe" />
+              <div className="card-detail-flip-hint card-detail-flip-hint--top">Tap to flip</div>
 
               {/* Barcode section */}
               <div className="card-detail-barcode-section">
                 <div className="card-detail-barcode-container">
-                  <CardBarcode data={card.barcodeData} format={card.barcodeFormat} scale={4} />
+                  <CardBarcode data={card.barcodeData} format={card.barcodeFormat} scale={6} />
                 </div>
                 <p className="card-detail-barcode-data">{card.barcodeData}</p>
               </div>
-
-              <div className="card-detail-flip-hint">Tap to flip</div>
             </div>
           </div>
         </div>
