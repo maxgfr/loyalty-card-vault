@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.3.0...v1.4.0) (2026-02-04)
+
+### Features
+
+* sync selectedCamera with active device during scanning; improve camera handling on mobile ([95401de](https://github.com/maxgfr/loyalty-card-vault/commit/95401de60e863fc52965f99f2460821f67eef0c3))
+
 ## [1.3.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.2.0...v1.3.0) (2026-02-04)
 
 ### Features
