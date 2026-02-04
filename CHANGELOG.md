@@ -1,3 +1,9 @@
+## [1.3.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.2.0...v1.3.0) (2026-02-04)
+
+### Features
+
+* move installation prompt to help section in SettingsPage; improve user experience ([ea47e9f](https://github.com/maxgfr/loyalty-card-vault/commit/ea47e9fe53b6399b2d3ae56a02a81f35a56dcdf4))
+
 ## [1.2.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.1.0...v1.2.0) (2026-02-04)
 
 ### Features
