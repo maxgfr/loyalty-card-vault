@@ -21,26 +21,33 @@ export class BarcodeScanner {
     this.videoElement = videoElement
     this.isScanning = true
 
-    try {
-      this.controls = await this.reader.decodeFromVideoDevice(
-        deviceId || undefined, // Use specified camera or default
-        videoElement,
-        (result, error) => {
-          if (this.isScanning && result) {
-            onResult(result)
-          }
-          // Ignore common scanning errors that happen during continuous scanning
-          if (error) {
-            const isExpectedError =
-              error.name === 'NotFoundException' ||
-              error.message?.includes('No MultiFormat Readers')
+    const callback = (result: Result | undefined, error: Error | undefined) => {
+      if (this.isScanning && result) {
+        onResult(result)
+      }
+      if (error) {
+        const isExpectedError =
+          error.name === 'NotFoundException' ||
+          error.message?.includes('No MultiFormat Readers')
 
-            if (!isExpectedError) {
-              onError(error as Error)
-            }
-          }
+        if (!isExpectedError) {
+          onError(error as Error)
         }
-      )
+      }
+    }
+
+    try {
+      if (deviceId) {
+        this.controls = await this.reader.decodeFromVideoDevice(deviceId, videoElement, callback)
+      } else {
+        // No explicit device selected: use constraints so the browser picks the right camera.
+        // On mobile this requests the back camera via facingMode; on desktop it uses the default.
+        const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent)
+        const constraints: MediaStreamConstraints = {
+          video: isMobile ? { facingMode: { ideal: 'environment' } } : true,
+        }
+        this.controls = await this.reader.decodeFromConstraints(constraints, videoElement, callback)
+      }
     } catch (error) {
       onError(error as Error)
     }

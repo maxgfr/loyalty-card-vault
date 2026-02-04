@@ -37,15 +37,11 @@ export function useScanner() {
       const videoDevices = devices.filter(device => device.kind === 'videoinput')
       setCameras(videoDevices)
 
-      // Auto-select back camera on mobile if available
-      const backCamera = videoDevices.find(device =>
-        device.label.toLowerCase().includes('back') ||
-        device.label.toLowerCase().includes('rear') ||
-        device.label.toLowerCase().includes('environment')
-      )
-      if (backCamera) {
-        setSelectedCamera(backCamera.deviceId)
-      } else if (videoDevices.length > 0) {
+      // On mobile, leave selectedCamera undefined so startScanning uses
+      // facingMode: 'environment' (iOS returns empty labels until a stream is active,
+      // making label-based back-camera detection unreliable).
+      // On desktop, pick the first available device.
+      if (!isMobile && videoDevices.length > 0) {
         setSelectedCamera(videoDevices[0].deviceId)
       }
 

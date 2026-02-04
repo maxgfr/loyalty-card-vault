@@ -26,9 +26,10 @@ export function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps) {
     }
   }, [stopScanning])
 
-  // Auto-start scanning when permission is granted and camera is selected
+  // Auto-start scanning when permission is granted.
+  // selectedCamera may be undefined on mobile (facingMode handles camera selection).
   useEffect(() => {
-    if (hasPermission && selectedCamera && !isScanning && videoRef.current) {
+    if (hasPermission && !isScanning && videoRef.current) {
       startScanning(videoRef, selectedCamera)
     }
   }, [hasPermission, selectedCamera, isScanning, startScanning])
