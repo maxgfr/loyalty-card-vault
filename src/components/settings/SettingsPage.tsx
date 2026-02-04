@@ -327,20 +327,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           </div>
         )}
 
-        {!isInstalled && deferredPrompt && (
-          <Card>
-            <h3 className="settings-section-title">📱 Installation</h3>
-            <p className="settings-section-description">
-              Install the app on your device for offline access and a better experience
-            </p>
-            <div className="settings-actions">
-              <Button variant="primary" onClick={handleInstallApp} fullWidth>
-                📲 Install App
-              </Button>
-            </div>
-          </Card>
-        )}
-
         <Card className="help-section">
           <button
             type="button"
@@ -354,6 +340,14 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
 
           {openHelpSection === 'installation' && (
             <div className="help-section-content">
+              {!isInstalled && deferredPrompt && (
+                <div className="settings-actions">
+                  <Button variant="primary" onClick={handleInstallApp} fullWidth>
+                    📲 Install App
+                  </Button>
+                </div>
+              )}
+
               <p className="help-highlight">
                 ✨ This app takes <strong>NO space</strong> on your phone!
               </p>
