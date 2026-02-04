@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.0.1...v1.1.0) (2026-02-04)
+
+### Features
+
+* update build process and enhance PWA asset generation with background color ([40ab523](https://github.com/maxgfr/loyalty-card-vault/commit/40ab523d8e6f8f8b958f3b85909238eb121839f8))
+
 ## [1.0.1](https://github.com/maxgfr/loyalty-card-vault/compare/v1.0.0...v1.0.1) (2026-02-04)
 
 ### Bug Fixes
