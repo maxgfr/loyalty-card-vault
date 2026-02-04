@@ -46,14 +46,14 @@ jobs:
       - name: Run tests
         run: pnpm test -- --reporter=verbose --run
 
-      - name: Build
-        run: pnpm build
-
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
+
+      - name: Build
+        run: pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
