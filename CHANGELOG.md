@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/maxgfr/loyalty-card-vault/compare/v1.0.0...v1.0.1) (2026-02-04)
+
+### Bug Fixes
+
+* Update CI workflow to enable Docker image loading ([8858a43](https://github.com/maxgfr/loyalty-card-vault/commit/8858a4372022c401209834237fd55217e26ccaae))
+
 ## 1.0.0 (2026-02-03)
 
 ### Features
