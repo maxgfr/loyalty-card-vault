@@ -100,6 +100,18 @@ export function useScanner() {
         },
         deviceId
       )
+
+      // Sync selectedCamera with the actual device in use.
+      // On mobile, facingMode is used instead of an explicit deviceId so
+      // selectedCamera stays undefined until we read it from the live stream.
+      if (videoRef.current) {
+        const stream = videoRef.current.srcObject as MediaStream
+        const track = stream?.getVideoTracks()[0]
+        const activeDeviceId = track?.getSettings().deviceId
+        if (activeDeviceId) {
+          setSelectedCamera(activeDeviceId)
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start scanning')
       setIsScanning(false)
