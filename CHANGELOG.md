@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.1.0...v1.2.0) (2026-02-04)
+
+### Features
+
+* add loading state and spinner to Button component; implement app update functionality in SettingsPage ([221be3f](https://github.com/maxgfr/loyalty-card-vault/commit/221be3ff72da03b202cecf9a1d5b4607c679b6f0))
+* improve camera selection logic for BarcodeScanner; enhance error handling during scanning ([ac5df62](https://github.com/maxgfr/loyalty-card-vault/commit/ac5df6266d85d9a459c0acc00e24833c55a4ac1c))
+
 ## [1.1.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.0.1...v1.1.0) (2026-02-04)
 
 ### Features
