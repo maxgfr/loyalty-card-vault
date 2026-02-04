@@ -31,6 +31,8 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [isInstalled, setIsInstalled] = useState(false)
   const [shareUrl, setShareUrl] = useState<{ url: string; password: string } | null>(null)
   const [isSharing, setIsSharing] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [openHelpSection, setOpenHelpSection] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -118,6 +120,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   }
 
   const handleReset = async () => {
+    setIsResetting(true)
     try {
       // 1. Clear all data (IndexedDB)
       await clearAllData()
@@ -143,6 +146,26 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
       }, 1500)
     } catch (error) {
       setMessage({ type: 'error', text: `Failed to clear data: ${error instanceof Error ? error.message : 'Unknown error'}` })
+      setIsResetting(false)
+    }
+  }
+
+  const handleUpdate = async () => {
+    setIsUpdating(true)
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration()
+        if (registration) {
+          const updated = await registration.update()
+          if (updated.waiting) {
+            updated.waiting.postMessage({ type: 'SKIP_WAITING' })
+          }
+        }
+      }
+      window.location.reload()
+    } catch {
+      setMessage({ type: 'error', text: 'Update failed. Please try again.' })
+      setIsUpdating(false)
     }
   }
 
@@ -270,6 +293,21 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         </Card>
 
         <Card>
+          <h3 className="settings-section-title">🔄 Update App</h3>
+          <p className="settings-section-description">
+            Check for updates and reload with the latest version
+          </p>
+          <Button
+            variant="secondary"
+            onClick={handleUpdate}
+            fullWidth
+            loading={isUpdating}
+          >
+            Update App
+          </Button>
+        </Card>
+
+        <Card>
           <h3 className="settings-section-title">🗑️ Reset Data</h3>
           <p className="settings-section-description">
             Clear all cards and settings. This action cannot be undone.
@@ -372,42 +410,6 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
           <button
             type="button"
             className="help-section-header"
-            onClick={() => toggleHelpSection('usage')}
-          >
-            <span className="help-icon">📖</span>
-            <span className="help-section-title">Usage Guide</span>
-            <span className="help-arrow">{openHelpSection === 'usage' ? '▼' : '▶'}</span>
-          </button>
-
-          {openHelpSection === 'usage' && (
-            <div className="help-section-content">
-              <div className="help-step">
-                <h4>1️⃣ Scan a card</h4>
-                <p>Tap the <strong>Scan</strong> tab and point your camera at your loyalty card's barcode.</p>
-              </div>
-
-              <div className="help-step">
-                <h4>2️⃣ Add manually</h4>
-                <p>Tap <strong>Add</strong>, enter the card name and number. Store suggestions appear automatically!</p>
-              </div>
-
-              <div className="help-step">
-                <h4>3️⃣ Use in store</h4>
-                <p>Open your card and show the barcode to the cashier. Simple and fast!</p>
-              </div>
-
-              <div className="help-step">
-                <h4>4️⃣ Make a backup</h4>
-                <p>Go to <strong>Settings</strong> → <strong>Export Backup</strong> to save all your cards.</p>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        <Card className="help-section">
-          <button
-            type="button"
-            className="help-section-header"
             onClick={() => toggleHelpSection('security')}
           >
             <span className="help-icon">🔒</span>
@@ -496,10 +498,10 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         title="Reset All Data"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowResetModal(false)}>
+            <Button variant="secondary" onClick={() => setShowResetModal(false)} disabled={isResetting}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={handleReset}>
+            <Button variant="danger" onClick={handleReset} loading={isResetting}>
               Reset Everything
             </Button>
           </>
