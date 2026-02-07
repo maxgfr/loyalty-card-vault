@@ -1,3 +1,9 @@
+## [1.5.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.4.0...v1.5.0) (2026-02-07)
+
+### Features
+
+* enhance layout with safe area insets for edge-to-edge devices across multiple components ([706280e](https://github.com/maxgfr/loyalty-card-vault/commit/706280ea7d4c77f5d47633b03377614ac14742fe))
+
 ## [1.4.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.3.0...v1.4.0) (2026-02-04)
 
 ### Features
