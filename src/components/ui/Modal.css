@@ -9,7 +9,11 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--space-lg);
+  /* Safe area insets for edge-to-edge devices */
+  padding: max(var(--space-lg), env(safe-area-inset-top))
+           max(var(--space-lg), env(safe-area-inset-right))
+           max(var(--space-lg), env(safe-area-inset-bottom))
+           max(var(--space-lg), env(safe-area-inset-left));
 }
 
 .modal {

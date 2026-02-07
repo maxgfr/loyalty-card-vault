@@ -4,6 +4,8 @@
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   z-index: 100;
+  /* Safe area inset for iPhone notch/dynamic island */
+  padding-top: env(safe-area-inset-top);
 }
 
 .header-content {
@@ -11,6 +13,9 @@
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-lg);
+  /* Add horizontal safe area insets for edge-to-edge devices */
+  padding-left: max(var(--space-lg), env(safe-area-inset-left));
+  padding-right: max(var(--space-lg), env(safe-area-inset-right));
 }
 
 .header-back {

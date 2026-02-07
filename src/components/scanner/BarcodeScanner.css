@@ -71,7 +71,7 @@
 
 .scanner-camera-overlay {
   position: absolute;
-  top: var(--space-md);
+  top: max(var(--space-md), env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -100,7 +100,7 @@
 
 .scanner-stop {
   position: absolute;
-  bottom: var(--space-xl);
+  bottom: max(var(--space-xl), calc(80px + env(safe-area-inset-bottom)));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
