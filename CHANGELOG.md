@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.5.0...v1.6.0) (2026-02-07)
+
+### Features
+
+* add safe area insets for iPhone notch in card list header ([6a71c52](https://github.com/maxgfr/loyalty-card-vault/commit/6a71c5248aa2555122c2a96ef7eb3d4096a5c7ff))
+
 ## [1.5.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.4.0...v1.5.0) (2026-02-07)
 
 ### Features
