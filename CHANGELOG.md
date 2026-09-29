@@ -1,3 +1,9 @@
+## [1.7.1](https://github.com/maxgfr/loyalty-card-vault/compare/v1.7.0...v1.7.1) (2026-09-29)
+
+### Bug Fixes
+
+* **docker:** pin pnpm to v10 to match the lockfile ([#4](https://github.com/maxgfr/loyalty-card-vault/issues/4)) ([a9a7a93](https://github.com/maxgfr/loyalty-card-vault/commit/a9a7a9310ea7b5c37a07cd73f56d6d19f9c4bebc))
+
 ## [1.7.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.6.0...v1.7.0) (2026-09-29)
 
 ### Features
