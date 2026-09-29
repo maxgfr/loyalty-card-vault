@@ -17,6 +17,7 @@
     "pwa:generate": "pwa-asset-generator public/logo.svg public/icons --type png --background-color=#6366f1"
   },
   "dependencies": {
+    "@zip.js/zip.js": "^2.18.2",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "bwip-js": "^4.8.0",

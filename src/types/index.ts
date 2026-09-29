@@ -12,6 +12,9 @@ export type BarcodeFormat =
   | 'ITF'
   | 'CODABAR'
   | 'DATA_MATRIX'
+  | 'AZTEC'
+  | 'PDF_417'
+  | 'CODE_93'
 
 /**
  * Loyalty card data structure

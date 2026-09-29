@@ -30,6 +30,9 @@ const BARCODE_FORMATS: BarcodeFormat[] = [
   'ITF',
   'CODABAR',
   'DATA_MATRIX',
+  'AZTEC',
+  'PDF_417',
+  'CODE_93',
 ]
 
 const PRESET_COLORS = getPresetColors()
