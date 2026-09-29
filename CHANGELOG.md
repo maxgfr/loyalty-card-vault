@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.6.0...v1.7.0) (2026-09-29)
+
+### Features
+
+* import cards from Catima exports ([#3](https://github.com/maxgfr/loyalty-card-vault/issues/3)) ([7c2130b](https://github.com/maxgfr/loyalty-card-vault/commit/7c2130be5df24b6fc444eaff2e3329e31d82aa5f)), closes [#2](https://github.com/maxgfr/loyalty-card-vault/issues/2)
+
 ## [1.6.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.5.0...v1.6.0) (2026-02-07)
 
 ### Features
