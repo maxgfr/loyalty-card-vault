@@ -14,6 +14,9 @@ export const barcodeFormatSchema = z.enum([
   'ITF',
   'CODABAR',
   'DATA_MATRIX',
+  'AZTEC',
+  'PDF_417',
+  'CODE_93',
 ])
 
 /**
@@ -35,6 +38,9 @@ export const barcodeDataValidators: Record<string, z.ZodString> = {
   ITF: z.string().regex(/^\d+$/, 'ITF must contain only digits').refine(data => data.length % 2 === 0, 'ITF must have even number of digits'),
   CODABAR: z.string().regex(/^[A-D][0-9\-$.:/.+]+[A-D]$/, 'CODABAR must start and end with A-D'),
   DATA_MATRIX: z.string().min(1, 'Data Matrix cannot be empty').max(2335, 'Data Matrix too long'),
+  AZTEC: z.string().min(1, 'Aztec code cannot be empty').max(3067, 'Aztec code too long'),
+  PDF_417: z.string().min(1, 'PDF417 cannot be empty').max(1850, 'PDF417 too long'),
+  CODE_93: z.string().min(1, 'CODE-93 cannot be empty').max(80, 'CODE-93 too long'),
 }
 
 /**

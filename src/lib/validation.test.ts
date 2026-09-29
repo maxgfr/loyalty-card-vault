@@ -174,6 +174,9 @@ describe('validation schemas', () => {
         'ITF',
         'CODABAR',
         'DATA_MATRIX',
+        'AZTEC',
+        'PDF_417',
+        'CODE_93',
       ]
 
       supportedFormats.forEach(format => {

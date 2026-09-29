@@ -87,6 +87,9 @@ export function mapZXingFormat(format: string): BarcodeFormat {
     'ITF': 'ITF',
     'CODABAR': 'CODABAR',
     'DATA_MATRIX': 'DATA_MATRIX',
+    'AZTEC': 'AZTEC',
+    'PDF_417': 'PDF_417',
+    'CODE_93': 'CODE_93',
   }
 
   return formatMap[format] || 'QR_CODE'

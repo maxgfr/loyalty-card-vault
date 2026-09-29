@@ -186,6 +186,9 @@ function mapBarcodeFormat(format: string): string {
     ITF: 'interleaved2of5',
     CODABAR: 'rationalizedCodabar',
     DATA_MATRIX: 'datamatrix',
+    AZTEC: 'azteccode',
+    PDF_417: 'pdf417',
+    CODE_93: 'code93',
   }
   return mapping[format] || 'code128'
 }

@@ -3,8 +3,10 @@ import { Header } from '../layout/Header'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Modal } from '../ui/Modal'
+import { Input } from '../ui/Input'
 import { ShareURLModal } from '../share/ShareURLModal'
 import { exportBackup, importBackup, downloadBackup } from '../../lib/backup'
+import { importCatima } from '../../lib/catima'
 import { getSettings, updateTheme, clearAllData, getAllCards } from '../../lib/storage'
 import { createShareURL } from '../../lib/share-url'
 import { APP_VERSION } from '../../lib/version'
@@ -35,6 +37,11 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [openHelpSection, setOpenHelpSection] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const catimaInputRef = useRef<HTMLInputElement>(null)
+  const [catimaFile, setCatimaFile] = useState<File | null>(null)
+  const [catimaPassword, setCatimaPassword] = useState('')
+  const [catimaPasswordError, setCatimaPasswordError] = useState<string | undefined>()
+  const [isImportingCatima, setIsImportingCatima] = useState(false)
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   const isAndroid = /Android/.test(navigator.userAgent)
@@ -117,6 +124,49 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         fileInputRef.current.value = ''
       }
     }
+  }
+
+  const closeCatimaPasswordModal = () => {
+    setCatimaFile(null)
+    setCatimaPassword('')
+    setCatimaPasswordError(undefined)
+  }
+
+  const runCatimaImport = async (file: File, password?: string) => {
+    setIsImportingCatima(true)
+    try {
+      const result = await importCatima(file, password)
+
+      if (result.success) {
+        closeCatimaPasswordModal()
+        const skipped = result.skippedCount > 0 ? ` (${result.skippedCount} already in your vault)` : ''
+        setMessage({ type: 'success', text: `Imported ${result.cardCount} cards from Catima${skipped}` })
+        onRefreshCards()
+      } else if (result.needsPassword) {
+        setCatimaFile(file)
+        setCatimaPasswordError(password ? result.error : undefined)
+      } else {
+        closeCatimaPasswordModal()
+        setMessage({ type: 'error', text: result.error || 'Failed to import Catima export' })
+      }
+    } finally {
+      setIsImportingCatima(false)
+    }
+  }
+
+  const handleCatimaFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (catimaInputRef.current) {
+      catimaInputRef.current.value = ''
+    }
+    if (!file) return
+    await runCatimaImport(file)
+  }
+
+  const handleCatimaPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!catimaFile || !catimaPassword) return
+    await runCatimaImport(catimaFile, catimaPassword)
   }
 
   const handleReset = async () => {
@@ -289,6 +339,28 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             accept=".json"
             style={{ display: 'none' }}
             onChange={handleFileChange}
+          />
+        </Card>
+
+        <Card>
+          <h3 className="settings-section-title">📲 Import from Catima</h3>
+          <p className="settings-section-description">
+            In Catima, open <strong>Import/Export → Export</strong>, then select the exported <code>.zip</code> file here
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() => catimaInputRef.current?.click()}
+            fullWidth
+            loading={isImportingCatima && !catimaFile}
+          >
+            Import Catima Export
+          </Button>
+          <input
+            ref={catimaInputRef}
+            type="file"
+            accept=".zip,.csv,application/zip,text/csv"
+            style={{ display: 'none' }}
+            onChange={handleCatimaFileChange}
           />
         </Card>
 
@@ -507,6 +579,44 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         <p>
           You will need to go through the setup process again after resetting.
         </p>
+      </Modal>
+
+      <Modal
+        isOpen={catimaFile !== null}
+        onClose={closeCatimaPasswordModal}
+        title="Catima Export Password"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeCatimaPasswordModal} disabled={isImportingCatima}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="catima-password-form"
+              loading={isImportingCatima}
+              disabled={!catimaPassword}
+            >
+              Import
+            </Button>
+          </>
+        }
+      >
+        <form id="catima-password-form" onSubmit={handleCatimaPasswordSubmit}>
+          <p>This export is password-protected. Enter the password you chose in Catima.</p>
+          <Input
+            type="password"
+            label="Password"
+            value={catimaPassword}
+            onChange={e => {
+              setCatimaPassword(e.target.value)
+              setCatimaPasswordError(undefined)
+            }}
+            error={catimaPasswordError}
+            autoFocus
+            fullWidth
+          />
+        </form>
       </Modal>
 
       <ShareURLModal

@@ -20,6 +20,9 @@ const formatMap: Record<BarcodeFormat, string> = {
   ITF: 'interleaved2of5',
   CODABAR: 'rationalizedCodabar',
   DATA_MATRIX: 'datamatrix',
+  AZTEC: 'azteccode',
+  PDF_417: 'pdf417',
+  CODE_93: 'code93',
 }
 
 export function CardBarcode({ data, format, scale = 3 }: CardBarcodeProps) {
