@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { CardList } from './CardList'
 import type { LoyaltyCard } from '../../types'
 
@@ -56,5 +56,53 @@ describe('CardList', () => {
 
     expect(screen.getByText('Loyalty Vault Card')).toBeInTheDocument()
     expect(screen.getByText('2 cards')).toBeInTheDocument()
+  })
+
+  describe('selected tag', () => {
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    it('remembers the last selected tag across remounts', () => {
+      const { unmount } = render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
+      fireEvent.click(screen.getByRole('button', { name: 'retail' }))
+      unmount()
+
+      render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
+
+      expect(screen.getByRole('button', { name: 'retail' })).toHaveClass('card-list-tag--active')
+      expect(screen.getByText('Target Circle')).toBeInTheDocument()
+      expect(screen.queryByText('Starbucks Rewards')).not.toBeInTheDocument()
+    })
+
+    it('forgets the tag when going back to All', () => {
+      const { unmount } = render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
+      fireEvent.click(screen.getByRole('button', { name: 'retail' }))
+      fireEvent.click(screen.getByRole('button', { name: 'All' }))
+      unmount()
+
+      render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
+
+      expect(screen.getByRole('button', { name: 'All' })).toHaveClass('card-list-tag--active')
+    })
+
+    it('falls back to All when the remembered tag no longer exists', () => {
+      localStorage.setItem('loyalty-card-vault:selected-tag', 'gone')
+
+      render(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
+
+      expect(screen.getByRole('button', { name: 'All' })).toHaveClass('card-list-tag--active')
+      expect(screen.getByText('Starbucks Rewards')).toBeInTheDocument()
+      expect(screen.getByText('Target Circle')).toBeInTheDocument()
+    })
+
+    it('keeps the remembered tag while cards are still loading', () => {
+      localStorage.setItem('loyalty-card-vault:selected-tag', 'retail')
+
+      const { rerender } = render(<CardList cards={[]} onCardClick={mockOnCardClick} />)
+      rerender(<CardList cards={mockCards} onCardClick={mockOnCardClick} />)
+
+      expect(screen.getByRole('button', { name: 'retail' })).toHaveClass('card-list-tag--active')
+    })
   })
 })
