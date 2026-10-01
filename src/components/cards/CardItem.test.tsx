@@ -17,10 +17,10 @@ describe('CardItem', () => {
     updatedAt: Date.now(),
   }
 
-  it('shows the card name as a title', () => {
+  it('is a button labelled with the card name', () => {
     render(<CardItem card={card} onClick={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Starbucks Rewards' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Starbucks Rewards' })).toBeInTheDocument()
   })
 
   it('does not render a barcode', () => {
@@ -34,7 +34,7 @@ describe('CardItem', () => {
     const onClick = vi.fn()
     render(<CardItem card={card} onClick={onClick} />)
 
-    fireEvent.click(screen.getByText('Starbucks Rewards'))
+    fireEvent.click(screen.getByRole('button', { name: 'Starbucks Rewards' }))
 
     expect(onClick).toHaveBeenCalledOnce()
   })

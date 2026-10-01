@@ -11,16 +11,16 @@ interface CardItemProps {
 // in the list can confuse a checkout scanner
 export function CardItem({ card, onClick }: CardItemProps) {
   return (
-    <div className="card-item-wrapper" onClick={onClick}>
-      <div
+    <button type="button" className="card-item-wrapper" onClick={onClick}>
+      <span
         className="card-item-card"
         style={{
           '--card-color': card.color,
           '--card-text-color': getReadableTextColor(card.color),
         } as React.CSSProperties}
       >
-        <h3 className="card-item-name">{card.name}</h3>
-      </div>
-    </div>
+        <span className="card-item-name">{card.name}</span>
+      </span>
+    </button>
   )
 }
