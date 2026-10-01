@@ -30,7 +30,7 @@ function applyTheme(theme: 'light' | 'dark' | 'auto') {
 
 function App() {
   const { route, navigate, goBack } = useHashRouter()
-  const { cards, addCard, updateCard, deleteCard, refreshCards } = useCards()
+  const { cards, addCard, updateCard, deleteCard, markCardUsed, refreshCards } = useCards()
   const [isReady, setIsReady] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
 
@@ -94,6 +94,12 @@ function App() {
     }
   }, [updateCard, addToast])
 
+  const handleOpenCard = useCallback((cardId: string) => {
+    navigate({ page: 'card', cardId })
+    // Failing to record usage only affects ordering, never block opening the card
+    markCardUsed(cardId).catch(err => console.error('Failed to record card usage:', err))
+  }, [navigate, markCardUsed])
+
   const handleDeleteCard = useCallback(async (cardId: string) => {
     try {
       await deleteCard(cardId)
@@ -116,7 +122,7 @@ function App() {
     <>
       <Layout>
         {route.page === 'home' && (
-          <CardList cards={cards} onCardClick={(id) => navigate({ page: 'card', cardId: id })} />
+          <CardList cards={cards} onCardClick={handleOpenCard} />
         )}
 
         {route.page === 'card' && (() => {

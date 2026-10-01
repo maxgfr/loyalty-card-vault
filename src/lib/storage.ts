@@ -1,6 +1,7 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import type { LoyaltyCard, AppSettings, EncryptedPayload } from '../types'
 import { encrypt, decrypt } from './crypto'
+import { sortByRecentUse } from './card-order'
 
 const DB_NAME = 'loyalty-card-vault'
 const DB_VERSION = 1
@@ -151,7 +152,7 @@ export async function getAllCards(password?: string): Promise<LoyaltyCard[]> {
       }
     }
 
-    return cards.sort((a, b) => b.updatedAt - a.updatedAt)
+    return sortByRecentUse(cards)
   } catch (error) {
     throw new Error(`Failed to retrieve cards: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
