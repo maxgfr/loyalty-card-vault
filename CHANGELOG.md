@@ -1,3 +1,12 @@
+## [1.8.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.7.1...v1.8.0) (2026-10-01)
+
+### Features
+
+* dense two-column card list without barcodes ([#12](https://github.com/maxgfr/loyalty-card-vault/issues/12)) ([2ccd0d5](https://github.com/maxgfr/loyalty-card-vault/commit/2ccd0d525c86bec05b282ccde223adb83b6a1b8c)), closes [#8](https://github.com/maxgfr/loyalty-card-vault/issues/8)
+* order cards by most recently used ([#9](https://github.com/maxgfr/loyalty-card-vault/issues/9)) ([d979205](https://github.com/maxgfr/loyalty-card-vault/commit/d979205f3790155e3960e075234f5c71960cbfd5)), closes [#5](https://github.com/maxgfr/loyalty-card-vault/issues/5)
+* remember the last selected tag on the main screen ([#10](https://github.com/maxgfr/loyalty-card-vault/issues/10)) ([16af387](https://github.com/maxgfr/loyalty-card-vault/commit/16af387bba090cbead305bff468095e69d086f64)), closes [#6](https://github.com/maxgfr/loyalty-card-vault/issues/6)
+* show the barcode side by default when opening a card ([#11](https://github.com/maxgfr/loyalty-card-vault/issues/11)) ([c38aa21](https://github.com/maxgfr/loyalty-card-vault/commit/c38aa2142ace134f5edf42444b9c66beb7e80497)), closes [#7](https://github.com/maxgfr/loyalty-card-vault/issues/7)
+
 ## [1.7.1](https://github.com/maxgfr/loyalty-card-vault/compare/v1.7.0...v1.7.1) (2026-09-29)
 
 ### Bug Fixes
