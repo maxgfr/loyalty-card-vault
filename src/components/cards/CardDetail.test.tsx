@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
 import { CardDetail } from './CardDetail'
 import type { LoyaltyCard } from '../../types'
@@ -16,6 +16,10 @@ describe('CardDetail', () => {
     updatedAt: Date.now(),
   }
 
+  beforeEach(() => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+  })
+
   const renderDetail = () =>
     render(<CardDetail card={card} onBack={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
 
@@ -23,6 +27,12 @@ describe('CardDetail', () => {
     const { container } = renderDetail()
 
     expect(container.querySelector('.card-detail-card-flip')).toHaveClass('card-detail-card-flip--flipped')
+  })
+
+  it('scrolls to the top so the barcode is in view', () => {
+    renderDetail()
+
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0)
   })
 
   it('flips to the front side when tapped', () => {

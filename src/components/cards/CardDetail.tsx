@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LoyaltyCard } from '../../types'
 import { Header } from '../layout/Header'
 import { Button } from '../ui/Button'
@@ -22,6 +22,11 @@ export function CardDetail({ card, onBack, onEdit, onDelete }: CardDetailProps) 
   // Start on the barcode side: showing it at checkout is the main reason to open a card
   const [isFlipped, setIsFlipped] = useState(true)
   const [shareUrl, setShareUrl] = useState<{ url: string; password: string } | null>(null)
+
+  // The list may have been scrolled far down: bring the barcode into view
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [card.id])
 
   const handleDelete = () => {
     onDelete()
