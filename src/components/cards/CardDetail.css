@@ -266,7 +266,8 @@
 /* Back of card */
 .card-detail-barcode-section {
   position: absolute;
-  inset: 5%;
+  /* Extra top room so the "Tap to flip" hint doesn't overlap the barcode */
+  inset: 14% 5% 5%;
   display: flex;
   flex-direction: column;
   align-items: center;
