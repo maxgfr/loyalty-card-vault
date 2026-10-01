@@ -1,223 +1,78 @@
 .card-item-wrapper {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-lg);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-item-card {
   position: relative;
-  border-radius: 12px;
-  padding: var(--space-md);
-  overflow: hidden;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: var(--space-md);
-  min-height: 160px;
+  justify-content: center;
+  aspect-ratio: 2 / 1;
+  padding: var(--space-sm) var(--space-md);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, transparent 60%),
+    var(--card-color);
+  color: var(--card-text-color);
+  /* Inset ring keeps very light cards distinct from the page background */
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-item-wrapper:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .card-item-wrapper:hover .card-item-card {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-  border-color: var(--card-color);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 6px 12px rgba(0, 0, 0, 0.16);
+}
+
+.card-item-wrapper:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .card-item-wrapper:active {
-  transform: translateY(-2px) scale(0.98);
-}
-
-/* Background patterns */
-.card-item-bg-pattern {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 20% 20%, var(--card-color-light) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, var(--card-color-light) 0%, transparent 50%);
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.card-item-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    var(--card-color-light) 0%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
-/* Shine effect */
-.card-item-shine {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: translateX(-100%) rotate(45deg);
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
-}
-
-.card-item-wrapper:hover .card-item-shine {
-  transform: translateX(100%) rotate(45deg);
-}
-
-/* Content */
-.card-item-content {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-  z-index: 1;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Header */
-.card-item-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.card-item-header-text {
-  flex: 1;
-  min-width: 0;
+  transform: scale(0.97);
 }
 
 .card-item-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-  margin: 0 0 4px 0;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-item-store {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-item-format {
-  padding: 4px 10px;
-  background: var(--card-color-light);
-  color: var(--card-color);
-  font-size: 0.75rem;
+  font-size: 1.125rem;
   font-weight: 700;
-  border-radius: var(--radius-full);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-  align-self: flex-start;
-}
-
-/* Barcode section */
-.card-item-barcode-wrapper {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #ffffff;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  width: 180px;
-  height: 180px;
-  flex-shrink: 0;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
 }
 
-/* Canvas sizing handled by CardBarcode.css with padding */
-
-/* Footer */
-.card-item-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-top: auto;
-}
-
-.card-item-tags {
-  display: flex;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
-}
-
-.card-item-tag {
-  padding: 4px 10px;
-  background: var(--color-surface-hover);
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-}
-
-.card-item-tag-more {
-  padding: 4px 10px;
-  background: var(--card-color-light);
-  color: var(--card-color);
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: var(--radius-sm);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .card-item-card {
-    padding: var(--space-sm);
-    min-height: 160px;
-  }
-
-  .card-item-barcode-wrapper {
-    width: 160px;
-    height: 160px;
-  }
-
-  .card-item-name {
-    font-size: 1.125rem;
-  }
-
-  .card-item-store {
-    font-size: 0.875rem;
-  }
-}
-
-/* Dark mode adjustments */
 @media (prefers-color-scheme: dark) {
   .card-item-card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 1px 3px rgba(0, 0, 0, 0.4);
   }
 
   .card-item-wrapper:hover .card-item-card {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-  }
-
-  .card-item-barcode-wrapper {
-    background: white;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 6px 12px rgba(0, 0, 0, 0.5);
   }
 }

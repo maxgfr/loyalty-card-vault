@@ -76,8 +76,9 @@
 }
 
 .card-list-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  /* Two columns on phones, more when the screen allows */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--space-md);
   padding: 0 var(--space-lg) var(--space-lg);
   max-width: 600px;

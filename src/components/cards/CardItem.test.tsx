@@ -1,0 +1,41 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { CardItem } from './CardItem'
+import type { LoyaltyCard } from '../../types'
+
+vi.mock('./CardItem.css', () => ({}))
+
+describe('CardItem', () => {
+  const card: LoyaltyCard = {
+    id: 'card-1',
+    name: 'Starbucks Rewards',
+    storeName: 'Starbucks',
+    barcodeData: '123456',
+    barcodeFormat: 'QR_CODE',
+    color: '#00704A',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+
+  it('is a button labelled with the card name', () => {
+    render(<CardItem card={card} onClick={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Starbucks Rewards' })).toBeInTheDocument()
+  })
+
+  it('does not render a barcode', () => {
+    const { container } = render(<CardItem card={card} onClick={vi.fn()} />)
+
+    expect(container.querySelector('canvas')).toBeNull()
+    expect(screen.queryByText('123456')).not.toBeInTheDocument()
+  })
+
+  it('opens the card on click', () => {
+    const onClick = vi.fn()
+    render(<CardItem card={card} onClick={onClick} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Starbucks Rewards' }))
+
+    expect(onClick).toHaveBeenCalledOnce()
+  })
+})
