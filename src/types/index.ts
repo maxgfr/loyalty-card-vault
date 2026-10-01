@@ -30,6 +30,7 @@ export interface LoyaltyCard {
   tags?: string[]
   createdAt: number
   updatedAt: number
+  lastUsedAt?: number // Last time the card was opened
 }
 
 /**

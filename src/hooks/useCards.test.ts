@@ -193,6 +193,67 @@ describe('useCards', () => {
     })
   })
 
+  it('marks a card as used without changing updatedAt', async () => {
+    const existingCard = {
+      id: 'card-1',
+      name: 'Test Card',
+      barcodeData: '123',
+      barcodeFormat: 'QR_CODE' as const,
+      color: '#FF0000',
+      createdAt: 1000,
+      updatedAt: 1000,
+    }
+
+    vi.mocked(storage.getAllCards).mockResolvedValue([existingCard])
+    vi.mocked(storage.saveCard).mockResolvedValue()
+
+    const { result } = renderHook(() => useCards())
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    await act(async () => {
+      await result.current.markCardUsed('card-1')
+    })
+
+    expect(storage.saveCard).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'card-1', updatedAt: 1000, lastUsedAt: expect.any(Number) }),
+      undefined
+    )
+    expect(result.current.cards[0].lastUsedAt).toBeGreaterThan(1000)
+    expect(result.current.cards[0].updatedAt).toBe(1000)
+  })
+
+  it('moves the last opened card to the top', async () => {
+    const baseCard = {
+      barcodeData: '123',
+      barcodeFormat: 'QR_CODE' as const,
+      color: '#FF0000',
+      createdAt: 1000,
+    }
+
+    vi.mocked(storage.getAllCards).mockResolvedValue([
+      { ...baseCard, id: 'recent', name: 'Recent', updatedAt: 2000 },
+      { ...baseCard, id: 'older', name: 'Older', updatedAt: 1000 },
+    ])
+    vi.mocked(storage.saveCard).mockResolvedValue()
+
+    const { result } = renderHook(() => useCards())
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(result.current.cards.map(c => c.id)).toEqual(['recent', 'older'])
+
+    await act(async () => {
+      await result.current.markCardUsed('older')
+    })
+
+    expect(result.current.cards.map(c => c.id)).toEqual(['older', 'recent'])
+  })
+
   it('throws error when updating non-existent card', async () => {
     vi.mocked(storage.getAllCards).mockResolvedValue([])
 
