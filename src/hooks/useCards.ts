@@ -89,8 +89,7 @@ export function useCards(): UseCardsReturn {
     const usedCard: LoyaltyCard = { ...existingCard, lastUsedAt: Date.now() }
 
     try {
-      const settings = await getSettings()
-      await saveCard(usedCard, settings.useEncryption ? undefined : undefined)
+      await saveCard(usedCard)
       setCards(prev => prev.map(c => c.id === id ? usedCard : c))
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to record card usage')

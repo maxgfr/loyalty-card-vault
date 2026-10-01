@@ -218,8 +218,7 @@ describe('useCards', () => {
     })
 
     expect(storage.saveCard).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'card-1', updatedAt: 1000, lastUsedAt: expect.any(Number) }),
-      undefined
+      expect.objectContaining({ id: 'card-1', updatedAt: 1000, lastUsedAt: expect.any(Number) })
     )
     expect(result.current.cards[0].lastUsedAt).toBeGreaterThan(1000)
     expect(result.current.cards[0].updatedAt).toBe(1000)
