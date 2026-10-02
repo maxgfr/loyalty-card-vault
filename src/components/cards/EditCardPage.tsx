@@ -30,6 +30,7 @@ export function EditCardPage({ card, onBack, onUpdate }: EditCardPageProps) {
     barcodeFormat: card.barcodeFormat,
     color: card.color,
     notes: card.notes || '',
+    tags: card.tags || [],
   }
 
   return (
