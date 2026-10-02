@@ -1,3 +1,9 @@
+## [1.8.1](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.0...v1.8.1) (2026-10-02)
+
+### Bug Fixes
+
+* keep existing tags when editing a card ([b787e59](https://github.com/maxgfr/loyalty-card-vault/commit/b787e59373aa6d473b88575eaf7df8d825466fa2)), closes [#13](https://github.com/maxgfr/loyalty-card-vault/issues/13)
+
 ## [1.8.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.7.1...v1.8.0) (2026-10-01)
 
 ### Features
