@@ -1,3 +1,9 @@
+## [1.8.3](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.2...v1.8.3) (2026-11-02)
+
+### Bug Fixes
+
+* **security:** encrypt every card under a mandatory password, as documented ([#16](https://github.com/maxgfr/loyalty-card-vault/issues/16)) ([905158c](https://github.com/maxgfr/loyalty-card-vault/commit/905158c02eb5f9f75c32aa187c223e57dc82e0e1))
+
 ## [1.8.2](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.1...v1.8.2) (2026-11-02)
 
 ### Bug Fixes
