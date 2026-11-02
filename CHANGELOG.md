@@ -1,3 +1,9 @@
+## [1.8.2](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.1...v1.8.2) (2026-11-02)
+
+### Bug Fixes
+
+* reset only this app's service worker, caches and storage ([#15](https://github.com/maxgfr/loyalty-card-vault/issues/15)) ([ff5d9b0](https://github.com/maxgfr/loyalty-card-vault/commit/ff5d9b072c6f069d9af8c273b33b1071aac8b7e2))
+
 ## [1.8.1](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.0...v1.8.1) (2026-10-02)
 
 ### Bug Fixes
