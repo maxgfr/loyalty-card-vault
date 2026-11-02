@@ -55,7 +55,8 @@ test.describe('Loyalty Card Vault E2E Tests', () => {
   test('3. View card details', async ({ page }) => {
     await addCard(page, 'Target', '987654321098')
     await page.click('.card-item-wrapper')
-    await expect(page.getByText('Target')).toBeVisible()
+    // The name is both the page title and the card's own heading: name the card's.
+    await expect(page.getByRole('heading', { level: 2, name: 'Target' })).toBeVisible()
     await expect(page.getByText('987654321098')).toBeVisible()
   })
 
