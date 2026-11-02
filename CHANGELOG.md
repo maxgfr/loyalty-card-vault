@@ -1,3 +1,9 @@
+## [1.8.4](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.3...v1.8.4) (2026-11-02)
+
+### Bug Fixes
+
+* **deps:** clear high-severity advisories ([#17](https://github.com/maxgfr/loyalty-card-vault/issues/17)) ([151492d](https://github.com/maxgfr/loyalty-card-vault/commit/151492dfb6de3a93ea04a8e0f6f069200d09cae2))
+
 ## [1.8.3](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.2...v1.8.3) (2026-11-02)
 
 ### Bug Fixes
