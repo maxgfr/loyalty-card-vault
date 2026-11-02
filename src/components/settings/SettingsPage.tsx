@@ -10,6 +10,7 @@ import { importCatima } from '../../lib/catima'
 import { getSettings, updateTheme, clearAllData, getAllCards } from '../../lib/storage'
 import { createShareURL } from '../../lib/share-url'
 import { APP_VERSION } from '../../lib/version'
+import { resetSiteData } from '../../lib/site-reset'
 import type { AppSettings } from '../../types'
 import './SettingsPage.css'
 
@@ -175,17 +176,9 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
       // 1. Clear all data (IndexedDB)
       await clearAllData()
 
-      // 2. Unregister all service workers
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations()
-        await Promise.all(registrations.map(registration => registration.unregister()))
-      }
-
-      // 3. Clear all caches
-      if ('caches' in window) {
-        const cacheNames = await caches.keys()
-        await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)))
-      }
+      // 2. This app's service worker, caches and localStorage keys only: the origin is shared
+      // with every other maxgfr.github.io app
+      await resetSiteData()
 
       setMessage({ type: 'success', text: 'All data and cache cleared. App will reset.' })
       setShowResetModal(false)
