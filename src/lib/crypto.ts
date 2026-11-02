@@ -4,7 +4,10 @@ const ALGORITHM = 'AES-GCM'
 const KEY_LENGTH = 256
 const IV_LENGTH = 12
 const SALT_LENGTH = 16
-const ITERATIONS = 100000
+/** PBKDF2-SHA256 rounds for everything encrypted from now on (OWASP 2023 minimum: 600,000). */
+export const ITERATIONS = 600000
+/** What payloads written before the `iterations` field existed were derived with. */
+const LEGACY_ITERATIONS = 100000
 
 /**
  * Convert ArrayBuffer to Base64 string
@@ -47,7 +50,11 @@ function generateIV(): Uint8Array {
 /**
  * Derive a cryptographic key from a password using PBKDF2
  */
-async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(
+  password: string,
+  salt: Uint8Array,
+  iterations: number = ITERATIONS
+): Promise<CryptoKey> {
   const encoder = new TextEncoder()
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -64,7 +71,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       salt: salt.buffer as ArrayBuffer,
-      iterations: ITERATIONS,
+      iterations,
       hash: 'SHA-256',
     },
     keyMaterial,
@@ -99,6 +106,7 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
     iv: arrayBufferToBase64(iv.buffer as ArrayBuffer),
     data: arrayBufferToBase64(encryptedBuffer),
     salt: arrayBufferToBase64(salt.buffer as ArrayBuffer),
+    iterations: ITERATIONS,
   }
 }
 
@@ -113,7 +121,7 @@ export async function decrypt(payload: EncryptedPayload, password: string): Prom
     const salt = new Uint8Array(saltBuffer)
     const ivBuffer = base64ToArrayBuffer(payload.iv)
     const encryptedData = base64ToArrayBuffer(payload.data)
-    const key = await deriveKey(password, salt)
+    const key = await deriveKey(password, salt, payload.iterations ?? LEGACY_ITERATIONS)
 
     const decryptedBuffer = await crypto.subtle.decrypt(
       {
@@ -125,6 +133,60 @@ export async function decrypt(payload: EncryptedPayload, password: string): Prom
     )
 
     return decoder.decode(decryptedBuffer)
+  } catch {
+    throw new Error('Decryption failed. Wrong password or corrupted data.')
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Vault key: derived once from the master password at unlock, kept in memory only
+// (non-extractable), and used to seal every card with a fresh IV.
+
+/** A string sealed with the vault key (AES-256-GCM). */
+export interface SealedData {
+  iv: string
+  data: string
+}
+
+export function newSalt(): string {
+  return arrayBufferToBase64(generateSalt().buffer as ArrayBuffer)
+}
+
+/** The vault key for a password, from the vault's salt and iteration count. */
+export function deriveVaultKey(password: string, salt: string, iterations: number): Promise<CryptoKey> {
+  return deriveKey(password, new Uint8Array(base64ToArrayBuffer(salt)), iterations)
+}
+
+/** Seals `text` under `key`. `context` (e.g. the card id) is authenticated, not encrypted. */
+export async function seal(key: CryptoKey, text: string, context = ''): Promise<SealedData> {
+  const iv = generateIV()
+  const encrypted = await crypto.subtle.encrypt(
+    {
+      name: ALGORITHM,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      iv: iv.buffer as ArrayBuffer,
+      ...(context ? { additionalData: new TextEncoder().encode(context) } : {}),
+    },
+    key,
+    new TextEncoder().encode(text)
+  )
+  return { iv: arrayBufferToBase64(iv.buffer as ArrayBuffer), data: arrayBufferToBase64(encrypted) }
+}
+
+/** Opens what `seal` produced. @throws Error for another key, another context or tampered data */
+export async function unseal(key: CryptoKey, sealed: SealedData, context = ''): Promise<string> {
+  try {
+    const decrypted = await crypto.subtle.decrypt(
+      {
+        name: ALGORITHM,
+        iv: base64ToArrayBuffer(sealed.iv),
+        ...(context ? { additionalData: new TextEncoder().encode(context) } : {}),
+      },
+      key,
+      base64ToArrayBuffer(sealed.data)
+    )
+    return new TextDecoder().decode(decrypted)
   } catch {
     throw new Error('Decryption failed. Wrong password or corrupted data.')
   }

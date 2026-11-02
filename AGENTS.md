@@ -24,10 +24,10 @@ pnpm lint             # Lint code with ESLint
 
 ## Test Coverage
 
-Current test coverage: **72 tests passing**
+Current test coverage: **141 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
 - Unit tests for hooks (useCards)
 - Component tests (CardList)
-- Library tests (crypto, validation, backup, share-url)
+- Library tests (crypto, validation, backup, share-url, storage with `fake-indexeddb`: vault, migration, backups)
 
 ## Architecture Overview
 
@@ -44,22 +44,23 @@ Feature-based structure under `src/components/`:
 - `scanner/` - Barcode scanner component
 - `layout/` - Layout wrappers (Header, BottomNav, Layout)
 - `settings/` - Settings page (theme, backup, reset)
-- `setup/` - Initial setup wizard (mandatory password)
+- `setup/` - `SetupPage` (mandatory password on first launch, encrypts cards left in clear by earlier versions) and `UnlockPage` (password on every launch, "forgot password" erase)
 - `help/` - Help/documentation page
 
 ### State Management Pattern
 - Custom React hooks in `src/hooks/` handle domain logic
-- `useCards()` - CRUD operations for cards, encryption lock/unlock state
+- `useCards(unlocked)` - CRUD operations for cards; empty while the vault is locked. `App` holds the vault state (`none` / `locked` / `unlocked`) from `getVaultState()`
 - `useHashRouter()` - Hash-based routing
 - `useScanner()` - Barcode scanning with camera
 - All state updates use immutable patterns (spread operators, no mutation)
 
 ### Storage Layer (`src/lib/storage.ts`)
 - IndexedDB via `idb` library for persistent storage
-- **Mandatory** AES-256-GCM encryption (all users must have password)
+- **Mandatory** AES-256-GCM encryption: `createVault(password)` / `unlockVault(password)` derive the vault key (PBKDF2-SHA256, 600,000 rounds, salt in the `vault` settings record) and keep it in a module variable; `lockVault()` forgets it. Card reads and writes throw `VaultLockedError` while locked
+- Each card is stored sealed (`{ v: 1, iv, data }`), its id as additional authenticated data
+- `createVault` encrypts plain cards left by earlier versions in the same transaction that records the vault (all or nothing)
 - Theme settings (light/dark/auto)
-- `clearAllData()` for complete reset
-- Raw data access for backup/restore functionality
+- `clearAllData()` for complete reset (also locks)
 - Settings stored separately from card data
 
 ### Encrypted URL Sharing (`src/lib/share-url.ts`)
@@ -101,14 +102,14 @@ Key functions:
 - React Compiler enabled via Babel plugin
 
 ### Encryption Flow
-1. Encryption is **mandatory** - all users must create a password during setup
-2. Password stored in memory only (never persisted)
-3. Each card encrypted with AES-256-GCM before IndexedDB storage
-4. Locking vault clears password from memory, requires re-entry
-5. Backup files detect encryption status from file content, not local settings
+1. Encryption is **mandatory** - all users must create a password during setup (no recovery if forgotten)
+2. Neither the password nor the derived key is persisted; the key lives in memory while unlocked
+3. Each card is sealed with AES-256-GCM under the vault key before IndexedDB storage
+4. Every launch shows the unlock screen; "Lock Now" in Settings forgets the key
+5. Backups are always exported encrypted (`BackupData` with an `EncryptedPayload` that the master password opens; see README). Import detects the format from the file: plain (earlier versions) or encrypted (asks for the password when it is not this vault's)
 
 ### Theme System
-- Settings stored in IndexedDB (`theme` key)
+- Settings stored in IndexedDB (`theme` key, not encrypted: preferences only)
 - Options: `light`, `dark`, `auto`
 - `auto` mode respects `prefers-color-scheme` media query
 - CSS classes applied to document root: `theme-light`, `theme-dark`, `theme-auto`
@@ -122,7 +123,7 @@ https://example.com/app#share/{base64-encoded-encrypted-data}
 - Recipient opens URL → enters password → cards imported
 
 ### Data Reset
-- `clearAllData()` in storage.ts deletes all cards and settings
+- `clearAllData()` in storage.ts deletes all cards, settings and the vault record
 - User must go through setup again after reset
 - Confirmation modal required before reset
 
@@ -146,5 +147,6 @@ Core types in `src/types/index.ts`:
 - Barcode scanning requires HTTPS or localhost for camera access
 - PWA testing requires serving over HTTPS (or localhost)
 - IndexedDB data persists across sessions - clear browser storage for fresh testing
+- A full page load locks the vault (the key is in memory only): in e2e tests navigate with `location.hash`, not `page.goto`, once unlocked
 - When modifying share logic, test full cycle (create URL → decode → import)
 - When modifying theme, test all three modes (light/dark/auto)

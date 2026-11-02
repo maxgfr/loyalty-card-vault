@@ -11,17 +11,22 @@ async function resetDatabase(page: any) {
   })
 }
 
-// Helper to setup app with clean database
+// In-app navigation: a full page load locks the vault (the key lives in memory only)
+// Helper to setup app with clean database and a new vault
 async function setupApp(page: any) {
   await page.goto('/')
   await resetDatabase(page)
   await page.reload()
+  await page.waitForSelector('[data-testid="setup-form"]', { timeout: 10000 })
+  await page.locator('input[type="password"]').nth(0).fill('Secret123')
+  await page.locator('input[type="password"]').nth(1).fill('Secret123')
+  await page.click('button:has-text("Get Started")')
   await page.waitForSelector('.app-layout', { timeout: 10000 })
 }
 
 // Helper to add a test card
 async function addCard(page: any, name: string, barcodeData: string) {
-  await page.goto('/#/add')
+  await page.evaluate(() => { location.hash = '/add' })
   await page.waitForLoadState('domcontentloaded')
   await page.fill('input[placeholder*="Starbucks"]', name)
   await page.locator('.input-label:has-text("Barcode Data") + input').fill(barcodeData)
@@ -36,7 +41,7 @@ test.describe('Loyalty Card Vault E2E Tests', () => {
     await setupApp(page)
   })
 
-  test('1. App loads directly to home', async ({ page }) => {
+  test('1. App opens on home once the vault is set up', async ({ page }) => {
     // App should be on home page (already navigated in setupApp)
     await expect(page.locator('.app-layout')).toBeVisible()
     await expect(page.getByText('No cards yet')).toBeVisible()
@@ -63,7 +68,7 @@ test.describe('Loyalty Card Vault E2E Tests', () => {
     await page.click('button[type="submit"]')
 
     await page.waitForTimeout(1000)
-    await page.goto('/#/')
+    await page.evaluate(() => { location.hash = '/' })
     await page.waitForSelector('.card-item-wrapper', { timeout: 5000 })
     await expect(page.getByText('New Name')).toBeVisible()
   })
@@ -91,7 +96,7 @@ test.describe('Loyalty Card Vault E2E Tests', () => {
   })
 
   test('7. Change theme', async ({ page }) => {
-    await page.goto('/#/settings')
+    await page.evaluate(() => { location.hash = '/settings' })
 
     await page.click('button:has-text("Dark")')
     await expect(page.locator('.settings-theme-option:has-text("Dark")')).toHaveClass(/settings-theme-option--active/)
@@ -103,12 +108,17 @@ test.describe('Loyalty Card Vault E2E Tests', () => {
   test('8. Export backup', async ({ page }) => {
     await addCard(page, 'Backup Test', '333333333333')
 
-    await page.goto('/#/settings')
+    await page.evaluate(() => { location.hash = '/settings' })
     const downloadPromise = page.waitForEvent('download')
     await page.click('button:has-text("Export Backup")')
 
     const download = await downloadPromise
     await expect(download.suggestedFilename()).toContain('loyalty-cards-backup')
+    // Encrypted with the master password: no card in clear in the file
+    const { readFileSync } = await import('node:fs')
+    const backup = JSON.parse(readFileSync((await download.path())!, 'utf8'))
+    expect(backup.encrypted).toBe(true)
+    expect(JSON.stringify(backup)).not.toContain('333333333333')
   })
 
   test('9. Share a single card', async ({ page }) => {
@@ -125,7 +135,7 @@ test.describe('Loyalty Card Vault E2E Tests', () => {
     await addCard(page, 'Card 1', '111111111111')
     await addCard(page, 'Card 2', '222222222222')
 
-    await page.goto('/#/settings')
+    await page.evaluate(() => { location.hash = '/settings' })
     await page.click('button:has-text("Share All Cards")')
 
     await expect(page.getByText('Share Cards')).toBeVisible()

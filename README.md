@@ -5,15 +5,16 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 ![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
 ![React 19](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Tests](https://img.shields.io/badge/Tests-72%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-141%20passing-success)
 
 ## ✨ Features
 
 ### 🔐 Security First
-- **AES-256 Encryption**: All cards encrypted by default
-- **Password Protection**: Mandatory password setup on first launch
+- **AES-256 Encryption**: Every card is encrypted at rest in IndexedDB
+- **Password Protection**: Mandatory password setup on first launch, unlock on every launch
 - **No Cloud Storage**: Everything stored locally in IndexedDB
-- **Lock/Unlock Vault**: Password never persisted, only in memory
+- **Lock/Unlock Vault**: Neither the password nor the key is ever stored; the key lives in memory until you lock or close the app
+- **No recovery**: A forgotten password cannot be recovered. "Forgot your password?" on the unlock screen erases the vault so you can start over
 
 ### 📱 Card Management
 - **Barcode Scanning**: Camera-based scanning with ZXing (QR, EAN-13, UPC-A, CODE-128, etc.)
@@ -29,8 +30,8 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 - **One System**: Same mechanism for single card or multiple cards
 
 ### 💾 Backup & Restore
-- **Export Backup**: Download encrypted JSON backup file
-- **Import Backup**: Restore from previous backup with password
+- **Export Backup**: Download a JSON backup file encrypted with your master password
+- **Import Backup**: Restore a backup; one exported from another vault asks for the password it was exported with. Unencrypted backups from earlier versions still import
 - **Theme Switcher**: Light / Dark / Auto theme options
 - **Reset Data**: Complete data reset with confirmation
 
@@ -46,7 +47,7 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 - **IndexedDB** - Local encrypted storage
 - **ZXing** - Barcode scanning
 - **bwip-js** - Barcode rendering
-- **Vitest** - Unit testing (72 tests)
+- **Vitest** - Unit testing (141 tests), **Playwright** - end-to-end tests
 - **PWA** - Installable with offline support
 
 ## 📦 Installation
@@ -92,10 +93,19 @@ The app can be installed on mobile devices and desktop:
 ## 🔒 Security Features
 
 ### Encryption
-- **Algorithm**: AES-256-GCM
-- **Key Derivation**: PBKDF2 (100,000 iterations)
+- **Algorithm**: AES-256-GCM, a fresh random IV for every write; each card's id is authenticated with it
+- **Key Derivation**: PBKDF2-SHA256, 600,000 iterations, random 16-byte salt per vault
 - **Password Requirements**: Minimum 8 characters with letter + number
-- **Storage**: Encrypted data in IndexedDB, password in memory only
+- **Storage**: IndexedDB (`loyalty-card-vault`) holds the sealed cards and the vault record (salt, iteration count and a sealed check value to recognise the right password). Neither the password nor the key is stored: the key stays in memory (non-extractable) while unlocked
+- **Upgrading**: cards saved unencrypted by earlier versions are encrypted when you set your password, in one transaction: if it fails, nothing changes
+- **Shared origin**: the app is served from `maxgfr.github.io`, whose storage every site there can read. They see ciphertext only
+
+### Backup file format
+```json
+{ "version": 1, "exportedAt": 1730000000000, "encrypted": true,
+  "cards": { "iv": "…", "data": "…", "salt": "…", "iterations": 600000 } }
+```
+`cards` decrypts (AES-256-GCM, key = PBKDF2-SHA256(password, salt, iterations)) to the JSON array of cards. Files without `iterations` were made with 100,000. Share links use the same payload, under their 6-character password.
 
 ### Privacy
 - ✅ No telemetry or analytics

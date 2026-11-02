@@ -40,6 +40,7 @@ export interface EncryptedPayload {
   iv: string // Base64 encoded initialization vector
   data: string // Base64 encoded encrypted data
   salt: string // Base64 encoded salt for key derivation
+  iterations?: number // PBKDF2-SHA256 rounds (absent: 100,000, the count before this field existed)
 }
 
 /**
