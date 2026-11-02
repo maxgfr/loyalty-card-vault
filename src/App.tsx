@@ -10,7 +10,9 @@ import { ToastContainer } from './components/ui/Toast'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
 import { SharePage } from './components/share/SharePage'
-import { getSettings, saveSettings } from './lib/storage'
+import { countPlainCards, getSettings, getVaultState, lockVault, saveSettings, type VaultState } from './lib/storage'
+import { SetupPage } from './components/setup/SetupPage'
+import { UnlockPage } from './components/setup/UnlockPage'
 import type { ScanResult, LoyaltyCard } from './types'
 import './App.css'
 import './index.css'
@@ -30,7 +32,9 @@ function applyTheme(theme: 'light' | 'dark' | 'auto') {
 
 function App() {
   const { route, navigate, goBack } = useHashRouter()
-  const { cards, addCard, updateCard, deleteCard, markCardUsed, refreshCards } = useCards()
+  const [vault, setVault] = useState<VaultState | null>(null)
+  const [plainCardCount, setPlainCardCount] = useState(0)
+  const { cards, addCard, updateCard, deleteCard, markCardUsed, refreshCards } = useCards(vault === 'unlocked')
   const [isReady, setIsReady] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
 
@@ -47,7 +51,13 @@ function App() {
       })
       applyTheme('auto')
     } finally {
-      setIsReady(true)
+      try {
+        const state = await getVaultState()
+        if (state === 'none') setPlainCardCount(await countPlainCards())
+        setVault(state)
+      } finally {
+        setIsReady(true)
+      }
     }
   }, [])
 
@@ -110,11 +120,33 @@ function App() {
     }
   }, [deleteCard, addToast, goBack])
 
-  if (!isReady) {
+  const handleLock = useCallback(() => {
+    lockVault()
+    setVault('locked')
+    navigate({ page: 'home' })
+  }, [navigate])
+
+  if (!isReady || vault === null) {
     return (
       <div className="app-loading">
         <div className="spinner" />
       </div>
+    )
+  }
+
+  if (vault === 'none') {
+    return <SetupPage plainCardCount={plainCardCount} onComplete={() => setVault('unlocked')} />
+  }
+
+  if (vault === 'locked') {
+    return (
+      <UnlockPage
+        onUnlock={() => setVault('unlocked')}
+        onErased={() => {
+          setPlainCardCount(0)
+          setVault('none')
+        }}
+      />
     )
   }
 
@@ -171,7 +203,7 @@ function App() {
         })()}
 
         {route.page === 'settings' && (
-          <SettingsPage onBack={goBack} onRefreshCards={refreshCards} />
+          <SettingsPage onBack={goBack} onRefreshCards={refreshCards} onLock={handleLock} />
         )}
 
         {route.page === 'share' && (

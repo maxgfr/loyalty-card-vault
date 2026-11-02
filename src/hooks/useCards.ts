@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { LoyaltyCard } from '../types'
-import { getAllCards, saveCard, deleteCard as deleteCardFromStorage, getSettings } from '../lib/storage'
+import { getAllCards, saveCard, deleteCard as deleteCardFromStorage } from '../lib/storage'
 import { generateId } from '../lib/crypto'
 import { sortByRecentUse } from '../lib/card-order'
 
@@ -15,17 +15,22 @@ interface UseCardsReturn {
   refreshCards: () => Promise<void>
 }
 
-export function useCards(): UseCardsReturn {
+/** The vault's cards; `unlocked` false (locked or not set up) keeps the list empty. */
+export function useCards(unlocked = true): UseCardsReturn {
   const [cards, setCards] = useState<LoyaltyCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const loadCards = useCallback(async () => {
+    if (!unlocked) {
+      setCards([])
+      setIsLoading(false)
+      return
+    }
     try {
       setIsLoading(true)
       setError(null)
-      const settings = await getSettings()
-      const loadedCards = await getAllCards(settings.useEncryption ? undefined : undefined)
+      const loadedCards = await getAllCards()
       setCards(loadedCards)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load cards')
@@ -33,7 +38,7 @@ export function useCards(): UseCardsReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [unlocked])
 
   useEffect(() => {
     loadCards()
@@ -48,8 +53,7 @@ export function useCards(): UseCardsReturn {
         updatedAt: Date.now(),
       }
 
-      const settings = await getSettings()
-      await saveCard(newCard, settings.useEncryption ? undefined : undefined)
+      await saveCard(newCard)
 
       setCards(prev => [newCard, ...prev])
     } catch (err) {
@@ -70,8 +74,7 @@ export function useCards(): UseCardsReturn {
         updatedAt: Date.now(),
       }
 
-      const settings = await getSettings()
-      await saveCard(updatedCard, settings.useEncryption ? undefined : undefined)
+      await saveCard(updatedCard)
 
       setCards(prev => prev.map(c => c.id === id ? updatedCard : c))
     } catch (err) {

@@ -75,6 +75,7 @@ const encryptedPayloadSchema = z.object({
   iv: z.string(),
   data: z.string(),
   salt: z.string(),
+  iterations: z.number().int().positive().optional(),
 })
 
 /**

@@ -17,6 +17,8 @@ import './SettingsPage.css'
 interface SettingsPageProps {
   onBack: () => void
   onRefreshCards: () => void
+  /** Forgets the vault key: the unlock screen shows again. */
+  onLock: () => void
 }
 
 interface BeforeInstallPromptEvent extends Event {
@@ -26,7 +28,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 type ThemeOption = 'light' | 'dark' | 'auto'
 
-export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
+export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPageProps) {
   const [showResetModal, setShowResetModal] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
@@ -43,6 +45,11 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
   const [catimaPassword, setCatimaPassword] = useState('')
   const [catimaPasswordError, setCatimaPasswordError] = useState<string | undefined>()
   const [isImportingCatima, setIsImportingCatima] = useState(false)
+  // A backup encrypted under another password than this vault's
+  const [backupFile, setBackupFile] = useState<File | null>(null)
+  const [backupPassword, setBackupPassword] = useState('')
+  const [backupPasswordError, setBackupPasswordError] = useState<string | undefined>()
+  const [isImportingBackup, setIsImportingBackup] = useState(false)
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   const isAndroid = /Android/.test(navigator.userAgent)
@@ -105,26 +112,48 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const closeBackupPasswordModal = () => {
+    setBackupFile(null)
+    setBackupPassword('')
+    setBackupPasswordError(undefined)
+  }
 
+  const runBackupImport = async (file: File, password?: string) => {
+    setIsImportingBackup(true)
     try {
-      const result = await importBackup(file)
+      const result = await importBackup(file, password)
 
       if (result.success) {
+        closeBackupPasswordModal()
         setMessage({ type: 'success', text: `Imported ${result.cardCount} cards successfully` })
         onRefreshCards()
+      } else if (result.needsPassword) {
+        setBackupFile(file)
+        setBackupPasswordError(password ? 'Wrong password for this backup' : undefined)
       } else {
+        closeBackupPasswordModal()
         setMessage({ type: 'error', text: result.error || 'Failed to import backup' })
       }
     } catch {
       setMessage({ type: 'error', text: 'Failed to import backup' })
     } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      setIsImportingBackup(false)
     }
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+    if (!file) return
+    await runBackupImport(file)
+  }
+
+  const handleBackupPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!backupFile || !backupPassword) return
+    await runBackupImport(backupFile, backupPassword)
   }
 
   const closeCatimaPasswordModal = () => {
@@ -316,7 +345,7 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
         <Card>
           <h3 className="settings-section-title">💾 Backup & Restore</h3>
           <p className="settings-section-description">
-            Export your cards to a file or import from a previous backup
+            Export your cards to a file encrypted with your master password, or import a previous backup
           </p>
           <div className="settings-actions">
             <Button variant="secondary" onClick={handleExport} fullWidth>
@@ -369,6 +398,16 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
             loading={isUpdating}
           >
             Update App
+          </Button>
+        </Card>
+
+        <Card>
+          <h3 className="settings-section-title">🔒 Lock Vault</h3>
+          <p className="settings-section-description">
+            Forget the key on this device until you enter your password again
+          </p>
+          <Button variant="secondary" onClick={onLock} fullWidth>
+            Lock Now
           </Button>
         </Card>
 
@@ -482,7 +521,8 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
                 <h4>✅ Your data is 100% secure</h4>
                 <ul>
                   <li><strong>Local storage only</strong>: Nothing is sent over the Internet</li>
-                  <li><strong>Mandatory encryption</strong>: All cards are encrypted with AES-256-GCM</li>
+                  <li><strong>Mandatory encryption</strong>: All cards are encrypted with AES-256-GCM, under a key derived from your password (PBKDF2-SHA256, 600,000 rounds)</li>
+                  <li><strong>Password never stored</strong>: The key exists only in memory while the vault is unlocked. A forgotten password cannot be recovered: keep a backup</li>
                   <li><strong>No server</strong>: The app runs entirely on your device</li>
                   <li><strong>No tracking</strong>: No cookies, no analytics</li>
                   <li><strong>Open source</strong>: Code is publicly auditable</li>
@@ -606,6 +646,44 @@ export function SettingsPage({ onBack, onRefreshCards }: SettingsPageProps) {
               setCatimaPasswordError(undefined)
             }}
             error={catimaPasswordError}
+            autoFocus
+            fullWidth
+          />
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={backupFile !== null}
+        onClose={closeBackupPasswordModal}
+        title="Backup Password"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeBackupPasswordModal} disabled={isImportingBackup}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="backup-password-form"
+              loading={isImportingBackup}
+              disabled={!backupPassword}
+            >
+              Import
+            </Button>
+          </>
+        }
+      >
+        <form id="backup-password-form" onSubmit={handleBackupPasswordSubmit}>
+          <p>This backup was encrypted with another master password. Enter that password.</p>
+          <Input
+            type="password"
+            label="Password"
+            value={backupPassword}
+            onChange={e => {
+              setBackupPassword(e.target.value)
+              setBackupPasswordError(undefined)
+            }}
+            error={backupPasswordError}
             autoFocus
             fullWidth
           />
