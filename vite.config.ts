@@ -67,7 +67,8 @@ export default defineConfig({
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'google-fonts-cache',
+              // Cache Storage is shared by every maxgfr.github.io app: the name carries this one's
+              cacheName: 'loyalty-card-vault-google-fonts',
               expiration: {
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year

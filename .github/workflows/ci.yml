@@ -8,7 +8,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # ubuntu-latest is now 26.04, which the pinned Playwright cannot install browsers on yet.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
