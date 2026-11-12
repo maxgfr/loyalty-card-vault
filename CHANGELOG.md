@@ -1,3 +1,9 @@
+## [1.11.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.10.0...v1.11.0) (2026-11-12)
+
+### Features
+
+* create the vault without a password, and reset a forgotten one with biometrics ([#22](https://github.com/maxgfr/loyalty-card-vault/issues/22)) ([19f27fc](https://github.com/maxgfr/loyalty-card-vault/commit/19f27fc12bd346bd3aae5d11982cb1f97cd54bcb))
+
 ## [1.10.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.9.0...v1.10.0) (2026-11-12)
 
 ### Features
