@@ -12,7 +12,7 @@ const LEGACY_ITERATIONS = 100000
 /**
  * Convert ArrayBuffer to Base64 string
  */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
   let binary = ''
   for (let i = 0; i < bytes.byteLength; i++) {
@@ -24,7 +24,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 /**
  * Convert Base64 string to ArrayBuffer
  */
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
@@ -155,6 +155,43 @@ export function newSalt(): string {
 /** The vault key for a password, from the vault's salt and iteration count. */
 export function deriveVaultKey(password: string, salt: string, iterations: number): Promise<CryptoKey> {
   return deriveKey(password, new Uint8Array(base64ToArrayBuffer(salt)), iterations)
+}
+
+/**
+ * The same key as `deriveVaultKey`, as raw bytes: what a passkey wraps. Meant to be imported
+ * (`importVaultKey`) or sealed right away, never kept.
+ */
+export async function deriveVaultKeyBits(password: string, salt: string, iterations: number): Promise<ArrayBuffer> {
+  const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, [
+    'deriveBits',
+  ])
+  return crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: base64ToArrayBuffer(salt), iterations, hash: 'SHA-256' },
+    keyMaterial,
+    KEY_LENGTH
+  )
+}
+
+/** The vault key from its raw bytes, non-extractable like `deriveVaultKey`'s. */
+export function importVaultKey(raw: ArrayBuffer): Promise<CryptoKey> {
+  return crypto.subtle.importKey('raw', raw, { name: ALGORITHM, length: KEY_LENGTH }, false, ['encrypt', 'decrypt'])
+}
+
+/** The key a passkey's PRF output (WebAuthn `prf` extension) seals the vault key with. */
+export async function keyFromPrf(prfOutput: ArrayBuffer): Promise<CryptoKey> {
+  const material = await crypto.subtle.importKey('raw', prfOutput, 'HKDF', false, ['deriveKey'])
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new Uint8Array(0),
+      info: new TextEncoder().encode('loyalty-card-vault/passkey'),
+    },
+    material,
+    { name: ALGORITHM, length: KEY_LENGTH },
+    false,
+    ['encrypt', 'decrypt']
+  )
 }
 
 /** Seals `text` under `key`. `context` (e.g. the card id) is authenticated, not encrypted. */

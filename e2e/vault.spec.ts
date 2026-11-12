@@ -26,7 +26,30 @@ async function setPassword(page: Page, password: string, confirm = password) {
 
 async function unlock(page: Page, password: string) {
   await page.locator('[data-testid="unlock-form"] input[type="password"]').fill(password)
-  await page.click('button:has-text("Unlock")')
+  await page.locator('[data-testid="unlock-form"] button[type="submit"]').click()
+}
+
+/** A platform authenticator (Touch ID, Face ID…) that always verifies the user, with PRF support. */
+async function addAuthenticator(page: Page) {
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('WebAuthn.enable')
+  await cdp.send('WebAuthn.addVirtualAuthenticator', {
+    options: {
+      protocol: 'ctap2',
+      ctap2Version: 'ctap2_1',
+      transport: 'internal',
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+      hasPrf: true,
+    },
+  })
+}
+
+async function openSettings(page: Page) {
+  await page.evaluate(() => { location.hash = '/settings' })
+  await expect(page.getByRole('heading', { name: '👆 Unlock' })).toBeVisible()
 }
 
 async function addCard(page: Page, name: string, barcodeData: string) {
@@ -197,5 +220,80 @@ test.describe('Vault encryption', () => {
     await page.click('.modal .btn--danger:has-text("Erase All Cards")')
     await expect(page.getByTestId('setup-form')).toBeVisible()
     expect(await dumpDatabase(page)).toBe(JSON.stringify({ cards: [], settings: [] }))
+  })
+})
+
+test.describe('Unlock without the password', () => {
+  test('biometrics offered after setup open the vault on the next launch', async ({ page }) => {
+    await freshStart(page)
+    await addAuthenticator(page)
+    await page.reload()
+    await setPassword(page, PASSWORD)
+    await expect(page.getByTestId('setup-passkey')).toBeVisible()
+    await page.click('button:has-text("Use Biometrics")')
+    await expect(page.locator('.app-layout')).toBeVisible()
+    await addCard(page, 'Pet Shop', '4006381333931')
+
+    const dump = await dumpDatabase(page)
+    expect(dump).not.toContain('4006381333931')
+    expect(dump).not.toContain(PASSWORD)
+
+    // Next launch: the passkey prompt shows by itself, no password typed.
+    await page.goto('/')
+    await expect(page.getByText('Pet Shop')).toBeVisible()
+  })
+
+  test('biometrics turned on in Settings; Lock Now waits for a tap', async ({ page }) => {
+    await freshStart(page)
+    await addAuthenticator(page)
+    await page.reload()
+    await setPassword(page, PASSWORD)
+    await page.click('button:has-text("Not Now")')
+    await addCard(page, 'Florist', '9780201379624')
+
+    await openSettings(page)
+    await page.click('button:has-text("Unlock with Touch ID / Face ID")')
+    await page.locator('#passkey-password-form input[type="password"]').fill('Wrong1234')
+    await page.click('.modal button:has-text("Continue")')
+    await expect(page.locator('#passkey-password-form')).toContainText('Wrong password')
+    await page.locator('#passkey-password-form input[type="password"]').fill(PASSWORD)
+    await page.click('.modal button:has-text("Continue")')
+    await expect(page.getByText('Biometric unlock is on')).toBeVisible()
+
+    await page.click('button:has-text("Lock Now")')
+    await expect(page.getByTestId('passkey-unlock')).toBeVisible()
+    await expect(page.locator('.app-layout')).toHaveCount(0)
+    await page.getByTestId('passkey-unlock').click()
+    await expect(page.getByText('Florist')).toBeVisible()
+
+    // Turned off: the password again
+    await openSettings(page)
+    await page.click('button:has-text("Turn Off Biometric Unlock")')
+    await page.goto('/')
+    await expect(page.getByTestId('unlock-form')).toBeVisible()
+    await expect(page.getByTestId('passkey-unlock')).toHaveCount(0)
+  })
+
+  test("don't ask on this device opens the app unlocked, until Lock Now", async ({ page }) => {
+    await freshStart(page)
+    await page.reload()
+    await setPassword(page, PASSWORD)
+    await addCard(page, 'Hardware', '5012345678900')
+
+    await openSettings(page)
+    await page.click("button:has-text(\"Don't Ask on This Device\")")
+    await page.click('.modal .btn--danger')
+    await expect(page.getByText('The app will open without asking on this device')).toBeVisible()
+
+    await page.goto('/')
+    await expect(page.getByText('Hardware')).toBeVisible()
+    await expect(page.getByTestId('unlock-form')).toHaveCount(0)
+
+    await openSettings(page)
+    await page.click('button:has-text("Lock Now")')
+    await expect(page.getByTestId('unlock-form')).toBeVisible()
+    await page.goto('/')
+    await expect(page.getByTestId('unlock-form')).toBeVisible()
+    await expect(page.getByText('Hardware')).toHaveCount(0)
   })
 })

@@ -1,6 +1,19 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import type { LoyaltyCard, AppSettings, EncryptedPayload } from '../types'
-import { deriveVaultKey, ITERATIONS, newSalt, seal, unseal, type SealedData } from './crypto'
+import {
+  arrayBufferToBase64,
+  base64ToArrayBuffer,
+  deriveVaultKey,
+  deriveVaultKeyBits,
+  importVaultKey,
+  ITERATIONS,
+  keyFromPrf,
+  newSalt,
+  seal,
+  unseal,
+  type SealedData,
+} from './crypto'
+import { createPasskey, getPrfOutput } from './passkey'
 import { sortByRecentUse } from './card-order'
 
 /**
@@ -8,6 +21,12 @@ import { sortByRecentUse } from './card-order'
  * master password (PBKDF2-SHA256, 600,000 rounds). The key exists only in memory while the vault
  * is unlocked; it is never stored, nor is the password. IndexedDB belongs to the origin, which
  * every maxgfr.github.io app shares: without the password, what they can read is ciphertext.
+ *
+ * Two opt-in shortcuts open the vault without typing the password:
+ * - a passkey (Touch ID, Face ID, fingerprint): the key's raw bytes, sealed under a key derived from
+ *   the passkey's PRF output, which only the authenticator gives back, after user verification;
+ * - "don't ask on this device": the key itself (a non-extractable CryptoKey) kept in IndexedDB.
+ *   Anyone holding the device, and any script of the origin, can then use it.
  */
 
 const DB_NAME = 'loyalty-card-vault'
@@ -18,6 +37,9 @@ const VAULT_KEY = 'vault'
 /** Sealed under the vault key to recognise the right password, even with no cards. */
 const CHECK_TEXT = 'loyalty-card-vault'
 const CHECK_CONTEXT = 'vault-check'
+const PASSKEY_KEY = 'passkey'
+const PASSKEY_CONTEXT = 'vault-passkey'
+const DEVICE_KEY = 'deviceKey'
 
 /** What the settings store keeps about the vault: never the password or the key. */
 export interface VaultMeta {
@@ -26,6 +48,16 @@ export interface VaultMeta {
   iterations: number
   salt: string
   check: SealedData
+}
+
+/** A passkey that opens the vault: the vault key's raw bytes, sealed under its PRF output. */
+export interface PasskeyRecord {
+  version: 1
+  /** Base64 of the credential's raw id */
+  credentialId: string
+  /** Base64 of the salt the PRF is evaluated with */
+  prfSalt: string
+  wrapped: SealedData
 }
 
 /** A card as stored: sealed under the vault key, its id authenticated with it. */
@@ -42,7 +74,7 @@ interface CardVaultDB {
   }
   settings: {
     key: string
-    value: AppSettings | string | boolean | number | VaultMeta
+    value: AppSettings | string | boolean | number | VaultMeta | PasskeyRecord | CryptoKey
   }
 }
 
@@ -59,6 +91,14 @@ export class VaultLockedError extends Error {
   constructor() {
     super('The vault is locked')
     this.name = 'VaultLockedError'
+  }
+}
+
+/** The passkey was found, but what it unseals is not this vault's key (vault erased and set up again). */
+export class PasskeyMismatchError extends Error {
+  constructor() {
+    super('This passkey does not open the vault')
+    this.name = 'PasskeyMismatchError'
   }
 }
 
@@ -116,10 +156,39 @@ async function getVaultMeta(): Promise<VaultMeta | undefined> {
   return (await db.get(SETTINGS_STORE, VAULT_KEY)) as VaultMeta | undefined
 }
 
-/** Whether a vault exists, and whether this page holds its key. */
+/** Whether `key` is the vault's key. */
+async function opensVault(key: CryptoKey, meta: VaultMeta): Promise<boolean> {
+  try {
+    return (await unseal(key, meta.check, CHECK_CONTEXT)) === CHECK_TEXT
+  } catch {
+    return false
+  }
+}
+
+function isCryptoKey(value: unknown): value is CryptoKey {
+  return typeof value === 'object' && value !== null && 'algorithm' in value && 'usages' in value
+}
+
+/**
+ * Whether a vault exists, and whether this page holds its key. A key kept on this device
+ * ("don't ask on this device") unlocks the vault here.
+ */
 export async function getVaultState(): Promise<VaultState> {
   if (session) return 'unlocked'
-  return (await getVaultMeta()) ? 'locked' : 'none'
+  const meta = await getVaultMeta()
+  if (!meta) return 'none'
+
+  const db = await initDB()
+  const deviceKey = await db.get(SETTINGS_STORE, DEVICE_KEY)
+  if (deviceKey !== undefined) {
+    if (isCryptoKey(deviceKey) && (await opensVault(deviceKey, meta))) {
+      session = { key: deviceKey, meta }
+      return 'unlocked'
+    }
+    // Not this vault's key (or not a key at all): forget it.
+    await db.delete(SETTINGS_STORE, DEVICE_KEY)
+  }
+  return 'locked'
 }
 
 /** Cards an earlier version left in clear text, to be sealed when the vault is created. */
@@ -189,17 +258,97 @@ export async function unlockVault(password: string): Promise<void> {
   const meta = await getVaultMeta()
   if (!meta) throw new Error('No vault to unlock')
   const key = await deriveVaultKey(password, meta.salt, meta.iterations)
-  try {
-    if ((await unseal(key, meta.check, CHECK_CONTEXT)) !== CHECK_TEXT) throw new Error('mismatch')
-  } catch {
-    throw new WrongPasswordError()
-  }
+  if (!(await opensVault(key, meta))) throw new WrongPasswordError()
   session = { key, meta }
 }
 
-/** Forgets the key: the cards stay sealed until the password is entered again. */
-export function lockVault(): void {
+/**
+ * Forgets the key, here and on this device ("don't ask on this device" is turned off): the cards
+ * stay sealed until the vault is unlocked again.
+ */
+export async function lockVault(): Promise<void> {
   session = null
+  const db = await initDB()
+  await db.delete(SETTINGS_STORE, DEVICE_KEY)
+}
+
+async function getPasskeyRecord(): Promise<PasskeyRecord | undefined> {
+  const db = await initDB()
+  return (await db.get(SETTINGS_STORE, PASSKEY_KEY)) as PasskeyRecord | undefined
+}
+
+/** Whether a passkey can unlock the vault. */
+export async function hasPasskeyUnlock(): Promise<boolean> {
+  return (await getPasskeyRecord()) !== undefined
+}
+
+/**
+ * Registers a passkey that unlocks the vault. The password is asked again: the key in memory is
+ * non-extractable, so its raw bytes are derived from the password once more, to be sealed.
+ * @throws VaultLockedError, WrongPasswordError, PasskeyUnsupportedError, PasskeyCancelledError
+ */
+export async function enablePasskeyUnlock(password: string): Promise<void> {
+  const { meta } = unlocked()
+  const raw = await deriveVaultKeyBits(password, meta.salt, meta.iterations)
+  if (!(await opensVault(await importVaultKey(raw), meta))) throw new WrongPasswordError()
+
+  const prfSalt = crypto.getRandomValues(new Uint8Array(32)).buffer
+  const { credentialId, prfOutput } = await createPasskey(prfSalt)
+  const record: PasskeyRecord = {
+    version: 1,
+    credentialId,
+    prfSalt: arrayBufferToBase64(prfSalt),
+    wrapped: await seal(await keyFromPrf(prfOutput), arrayBufferToBase64(raw), PASSKEY_CONTEXT),
+  }
+  const db = await initDB()
+  await db.put(SETTINGS_STORE, record, PASSKEY_KEY)
+}
+
+/**
+ * Unlocks the vault with its passkey (the system prompt shows).
+ * @throws PasskeyMismatchError, PasskeyUnsupportedError, PasskeyCancelledError
+ */
+export async function unlockWithPasskey(): Promise<void> {
+  const meta = await getVaultMeta()
+  const record = await getPasskeyRecord()
+  if (!meta || !record) throw new Error('No passkey to unlock with')
+
+  const prfOutput = await getPrfOutput(record.credentialId, base64ToArrayBuffer(record.prfSalt))
+  let key: CryptoKey
+  try {
+    const raw = await unseal(await keyFromPrf(prfOutput), record.wrapped, PASSKEY_CONTEXT)
+    key = await importVaultKey(base64ToArrayBuffer(raw))
+  } catch {
+    throw new PasskeyMismatchError()
+  }
+  if (!(await opensVault(key, meta))) throw new PasskeyMismatchError()
+  session = { key, meta }
+}
+
+/** Stops unlocking with the passkey. The passkey itself stays in the device's password manager. */
+export async function disablePasskeyUnlock(): Promise<void> {
+  const db = await initDB()
+  await db.delete(SETTINGS_STORE, PASSKEY_KEY)
+}
+
+/** Whether the vault key is kept on this device ("don't ask on this device"). */
+export async function isDeviceRemembered(): Promise<boolean> {
+  const db = await initDB()
+  return (await db.get(SETTINGS_STORE, DEVICE_KEY)) !== undefined
+}
+
+/**
+ * "Don't ask on this device": keeps the vault key (non-extractable) in IndexedDB, so that the app
+ * opens unlocked. Off forgets it.
+ * @throws VaultLockedError (to turn it on)
+ */
+export async function setRememberDevice(remember: boolean): Promise<void> {
+  const db = await initDB()
+  if (remember) {
+    await db.put(SETTINGS_STORE, unlocked().key, DEVICE_KEY)
+  } else {
+    await db.delete(SETTINGS_STORE, DEVICE_KEY)
+  }
 }
 
 /** The vault's salt and rounds, to write backups the master password opens. */
@@ -367,5 +516,5 @@ export async function clearAllData(): Promise<void> {
   const db = await initDB()
   const tx = db.transaction([CARDS_STORE, SETTINGS_STORE], 'readwrite')
   await Promise.all([tx.objectStore(CARDS_STORE).clear(), tx.objectStore(SETTINGS_STORE).clear(), tx.done])
-  lockVault()
+  session = null
 }

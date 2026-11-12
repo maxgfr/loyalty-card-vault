@@ -7,7 +7,20 @@ import { Input } from '../ui/Input'
 import { ShareURLModal } from '../share/ShareURLModal'
 import { exportBackup, importBackup, downloadBackup } from '../../lib/backup'
 import { importCatima } from '../../lib/catima'
-import { getSettings, updateTheme, clearAllData, getAllCards } from '../../lib/storage'
+import {
+  getSettings,
+  updateTheme,
+  clearAllData,
+  getAllCards,
+  disablePasskeyUnlock,
+  enablePasskeyUnlock,
+  hasPasskeyUnlock,
+  isDeviceRemembered,
+  setRememberDevice,
+  WrongPasswordError,
+} from '../../lib/storage'
+import { isPasskeyAvailable } from '../../lib/passkey'
+import { passkeyErrorMessage } from '../setup/passkeyMessages'
 import { createShareURL } from '../../lib/share-url'
 import { APP_VERSION } from '../../lib/version'
 import { resetSiteData } from '../../lib/site-reset'
@@ -50,6 +63,15 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
   const [backupPassword, setBackupPassword] = useState('')
   const [backupPasswordError, setBackupPasswordError] = useState<string | undefined>()
   const [isImportingBackup, setIsImportingBackup] = useState(false)
+  // How the vault opens on this device
+  const [passkeyEnabled, setPasskeyEnabled] = useState(false)
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false)
+  const [deviceRemembered, setDeviceRemembered] = useState(false)
+  const [showPasskeyModal, setShowPasskeyModal] = useState(false)
+  const [passkeyPassword, setPasskeyPassword] = useState('')
+  const [passkeyPasswordError, setPasskeyPasswordError] = useState<string | undefined>()
+  const [isEnablingPasskey, setIsEnablingPasskey] = useState(false)
+  const [showRememberModal, setShowRememberModal] = useState(false)
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   const isAndroid = /Android/.test(navigator.userAgent)
@@ -58,6 +80,14 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
     const currentSettings = await getSettings()
     setSettings(currentSettings)
     applyTheme(currentSettings.theme)
+    const [enrolled, available, remembered] = await Promise.all([
+      hasPasskeyUnlock(),
+      isPasskeyAvailable(),
+      isDeviceRemembered(),
+    ])
+    setPasskeyEnabled(enrolled)
+    setPasskeyAvailable(available)
+    setDeviceRemembered(remembered)
   }, [])
 
   useEffect(() => {
@@ -96,6 +126,57 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
     await updateTheme(theme)
     setSettings(prev => prev ? { ...prev, theme } : null)
     applyTheme(theme)
+  }
+
+  const closePasskeyModal = () => {
+    setShowPasskeyModal(false)
+    setPasskeyPassword('')
+    setPasskeyPasswordError(undefined)
+  }
+
+  const handlePasskeySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!passkeyPassword) return
+    setIsEnablingPasskey(true)
+    try {
+      await enablePasskeyUnlock(passkeyPassword)
+      setPasskeyEnabled(true)
+      closePasskeyModal()
+      setMessage({ type: 'success', text: 'Biometric unlock is on' })
+    } catch (err) {
+      // Dismissed prompt: stay in the dialog, to try again or cancel
+      const text = passkeyErrorMessage(err)
+      if (text) setPasskeyPasswordError(err instanceof WrongPasswordError ? 'Wrong password' : text)
+    } finally {
+      setIsEnablingPasskey(false)
+    }
+  }
+
+  const handleDisablePasskey = async () => {
+    try {
+      await disablePasskeyUnlock()
+      setPasskeyEnabled(false)
+      setMessage({
+        type: 'success',
+        text: 'Biometric unlock is off. The passkey can be deleted from your password manager.',
+      })
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to turn off biometric unlock' })
+    }
+  }
+
+  const handleRememberDevice = async (remember: boolean) => {
+    try {
+      await setRememberDevice(remember)
+      setDeviceRemembered(remember)
+      setShowRememberModal(false)
+      setMessage({
+        type: 'success',
+        text: remember ? 'The app will open without asking on this device' : 'The app will ask to unlock again',
+      })
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to change how the app unlocks' })
+    }
   }
 
   const handleExport = async () => {
@@ -402,9 +483,47 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
         </Card>
 
         <Card>
+          <h3 className="settings-section-title">👆 Unlock</h3>
+          <p className="settings-section-description">
+            How the app opens on this device. Your password always works.
+          </p>
+          <div className="settings-actions">
+            {passkeyEnabled ? (
+              <Button variant="secondary" onClick={handleDisablePasskey} fullWidth>
+                Turn Off Biometric Unlock
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                onClick={() => setShowPasskeyModal(true)}
+                disabled={!passkeyAvailable}
+                fullWidth
+              >
+                Unlock with Touch ID / Face ID
+              </Button>
+            )}
+            {!passkeyEnabled && !passkeyAvailable && (
+              <p className="settings-section-description">
+                Biometric unlock is not available in this browser or on this device.
+              </p>
+            )}
+            {deviceRemembered ? (
+              <Button variant="secondary" onClick={() => handleRememberDevice(false)} fullWidth>
+                Ask to Unlock Again
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setShowRememberModal(true)} fullWidth>
+                Don't Ask on This Device
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        <Card>
           <h3 className="settings-section-title">🔒 Lock Vault</h3>
           <p className="settings-section-description">
-            Forget the key on this device until you enter your password again
+            Forget the key until the vault is unlocked again
+            {deviceRemembered ? '. This also turns off “Don’t ask on this device”.' : ''}
           </p>
           <Button variant="secondary" onClick={onLock} fullWidth>
             Lock Now
@@ -523,6 +642,8 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
                   <li><strong>Local storage only</strong>: Nothing is sent over the Internet</li>
                   <li><strong>Mandatory encryption</strong>: All cards are encrypted with AES-256-GCM, under a key derived from your password (PBKDF2-SHA256, 600,000 rounds)</li>
                   <li><strong>Password never stored</strong>: The key exists only in memory while the vault is unlocked. A forgotten password cannot be recovered: keep a backup</li>
+                  <li><strong>Biometric unlock (optional)</strong>: A passkey (Touch ID, Face ID, fingerprint) releases the key; it is sealed under a secret only your device's authenticator gives back, after verifying you</li>
+                  <li><strong>"Don't ask on this device" (optional)</strong>: The key is kept on this device so the app opens unlocked. Anyone holding your unlocked device, and any other site on maxgfr.github.io, could then read your cards. Lock Now turns it off</li>
                   <li><strong>No server</strong>: The app runs entirely on your device</li>
                   <li><strong>No tracking</strong>: No cookies, no analytics</li>
                   <li><strong>Open source</strong>: Code is publicly auditable</li>
@@ -688,6 +809,73 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
             fullWidth
           />
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={showPasskeyModal}
+        onClose={closePasskeyModal}
+        title="Biometric Unlock"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closePasskeyModal} disabled={isEnablingPasskey}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="passkey-password-form"
+              loading={isEnablingPasskey}
+              disabled={!passkeyPassword}
+            >
+              Continue
+            </Button>
+          </>
+        }
+      >
+        <form id="passkey-password-form" onSubmit={handlePasskeySubmit}>
+          <p>
+            Enter your password, then confirm with Touch ID, Face ID or your fingerprint. A passkey is saved
+            in your device's password manager.
+          </p>
+          <Input
+            type="password"
+            label="Password"
+            value={passkeyPassword}
+            onChange={e => {
+              setPasskeyPassword(e.target.value)
+              setPasskeyPasswordError(undefined)
+            }}
+            error={passkeyPasswordError}
+            autoComplete="current-password"
+            autoFocus
+            fullWidth
+          />
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={showRememberModal}
+        onClose={() => setShowRememberModal(false)}
+        title="Don't Ask on This Device?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowRememberModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={() => handleRememberDevice(true)}>
+              Don't Ask
+            </Button>
+          </>
+        }
+      >
+        <p>
+          The app will open without a password or biometrics on this device. To do so, the key that
+          decrypts your cards is kept on the device.
+        </p>
+        <p>
+          Anyone who can use this device, and any other site hosted on maxgfr.github.io, could then read
+          your cards. Lock Now in Settings turns this off.
+        </p>
       </Modal>
 
       <ShareURLModal

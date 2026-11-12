@@ -43,6 +43,8 @@ function App() {
   const { route, navigate, goBack } = useHashRouter()
   const [vault, setVault] = useState<VaultState | null>(null)
   const [plainCardCount, setPlainCardCount] = useState(0)
+  // Locked with "Lock Now": no biometric prompt until asked for
+  const [lockedByUser, setLockedByUser] = useState(false)
   const { cards, isLoading: cardsLoading, addCard, updateCard, deleteCard, markCardUsed, refreshCards } =
     useCards(vault === 'unlocked')
   // Launched on the list (the home screen icon, not a share or card link): the card that was open
@@ -160,8 +162,14 @@ function App() {
     }
   }, [deleteCard, addToast, goBack])
 
-  const handleLock = useCallback(() => {
-    lockVault()
+  const handleLock = useCallback(async () => {
+    try {
+      await lockVault()
+    } catch (err) {
+      // The key is forgotten in memory anyway; only "don't ask on this device" may survive.
+      console.error('Failed to forget the key kept on this device:', err)
+    }
+    setLockedByUser(true)
     setVault('locked')
     navigate({ page: 'home' })
   }, [navigate])
@@ -181,7 +189,11 @@ function App() {
   if (vault === 'locked') {
     return (
       <UnlockPage
-        onUnlock={() => setVault('unlocked')}
+        onUnlock={() => {
+          setLockedByUser(false)
+          setVault('unlocked')
+        }}
+        promptPasskey={!lockedByUser}
         onErased={() => {
           setPlainCardCount(0)
           setVault('none')

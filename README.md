@@ -5,15 +5,17 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 ![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
 ![React 19](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Tests](https://img.shields.io/badge/Tests-142%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-152%20passing-success)
 
 ## ✨ Features
 
 ### 🔐 Security First
 - **AES-256 Encryption**: Every card is encrypted at rest in IndexedDB
 - **Password Protection**: Mandatory password setup on first launch, unlock on every launch
+- **Biometric Unlock**: Optionally open the app with Touch ID, Face ID or a fingerprint (a passkey) instead of typing the password
+- **Don't Ask on This Device**: Optionally keep the vault unlocked on a device you trust (see the trade-off below)
 - **No Cloud Storage**: Everything stored locally in IndexedDB
-- **Lock/Unlock Vault**: Neither the password nor the key is ever stored; the key lives in memory until you lock or close the app
+- **Lock/Unlock Vault**: Neither the password nor the key is ever stored (unless you choose "Don't ask on this device"); the key lives in memory until you lock or close the app
 - **No recovery**: A forgotten password cannot be recovered. "Forgot your password?" on the unlock screen erases the vault so you can start over
 
 ### 📱 Card Management
@@ -100,6 +102,8 @@ The app can be installed on mobile devices and desktop:
 - **Storage**: IndexedDB (`loyalty-card-vault`) holds the sealed cards and the vault record (salt, iteration count and a sealed check value to recognise the right password). Neither the password nor the key is stored: the key stays in memory (non-extractable) while unlocked
 - **Upgrading**: cards saved unencrypted by earlier versions are encrypted when you set your password, in one transaction: if it fails, nothing changes
 - **Shared origin**: the app is served from `maxgfr.github.io`, whose storage every site there can read. They see ciphertext only
+- **Biometric unlock (optional)**: a passkey on the device's platform authenticator (Touch ID, Face ID, Android fingerprint, Windows Hello), used for its WebAuthn PRF output only (nothing goes to a server). The vault key's raw bytes are sealed (AES-256-GCM) under HKDF-SHA256(PRF output) and stored in the `passkey` settings record with the credential id and PRF salt; only the authenticator, after verifying you, can give that output back. Turning it on asks for the password, since the key in memory cannot be exported. Needs passkeys with PRF: Safari / iOS 18+, Chrome 132+, Firefox 135+. The password keeps working
+- **Don't ask on this device (optional)**: the vault key itself (a non-extractable `CryptoKey`) is kept in the `deviceKey` settings record, and the app opens unlocked. Anyone who can use the device, and any script of the `maxgfr.github.io` origin, can then decrypt the cards. Lock Now turns it off
 
 ### Backup file format
 ```json
