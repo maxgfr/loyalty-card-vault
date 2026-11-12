@@ -22,6 +22,8 @@ import { sortByRecentUse } from './card-order'
  * is unlocked; it is never stored, nor is the password. IndexedDB belongs to the origin, which
  * every maxgfr.github.io app shares: without the password, what they can read is ciphertext.
  *
+ * A vault can also have no password at all: its key is then random, and only its passkey opens it.
+ *
  * Two opt-in shortcuts open the vault without typing the password:
  * - a passkey (Touch ID, Face ID, fingerprint): the key's raw bytes, sealed under a key derived from
  *   the passkey's PRF output, which only the authenticator gives back, after user verification;
@@ -42,11 +44,21 @@ const PASSKEY_CONTEXT = 'vault-passkey'
 const DEVICE_KEY = 'deviceKey'
 
 /** What the settings store keeps about the vault: never the password or the key. */
-export interface VaultMeta {
+export type VaultMeta = PasswordVaultMeta | PasskeyVaultMeta
+
+/** The key is PBKDF2-SHA256(password, salt, iterations). */
+export interface PasswordVaultMeta {
   version: 1
   kdf: 'PBKDF2-SHA256'
   iterations: number
   salt: string
+  check: SealedData
+}
+
+/** No password: the key is random, and only the passkey record opens it. */
+export interface PasskeyVaultMeta {
+  version: 1
+  kdf: 'none'
   check: SealedData
 }
 
@@ -103,8 +115,16 @@ export class PasskeyMismatchError extends Error {
 }
 
 let dbInstance: IDBPDatabase<CardVaultDB> | null = null
-/** The unlocked vault: its key (memory only) and metadata. */
-let session: { key: CryptoKey; meta: VaultMeta } | null = null
+/**
+ * The unlocked vault: its key (memory only) and metadata, and the key from the passkey's PRF output
+ * once the passkey was used, to seal the vault key again without a second prompt.
+ */
+interface Session {
+  key: CryptoKey
+  meta: VaultMeta
+  prfKey?: CryptoKey
+}
+let session: Session | null = null
 
 async function initDB(): Promise<IDBPDatabase<CardVaultDB>> {
   if (dbInstance) {
@@ -142,13 +162,91 @@ function cardContext(id: string): string {
   return `card:${id}`
 }
 
-function unlocked(): { key: CryptoKey; meta: VaultMeta } {
+function unlocked(): Session {
   if (!session) throw new VaultLockedError()
   return session
 }
 
 async function sealCard(key: CryptoKey, card: LoyaltyCard): Promise<SealedCard> {
   return { v: 1, ...(await seal(key, JSON.stringify(card), cardContext(card.id))) }
+}
+
+function hasPasswordMeta(meta: VaultMeta): meta is PasswordVaultMeta {
+  return meta.kdf === 'PBKDF2-SHA256'
+}
+
+type Write =
+  | { store: typeof CARDS_STORE; key: string; value: StoredCard }
+  /** `undefined` deletes the key */
+  | { store: typeof SETTINGS_STORE; key: string; value: CardVaultDB['settings']['value'] | undefined }
+
+/**
+ * Applies every write in one transaction: all or nothing. Encrypt before calling: a transaction
+ * cannot wait on WebCrypto without committing early.
+ * @throws the first refused write (nothing is changed then)
+ */
+async function writeAll(writes: Write[]): Promise<void> {
+  const db = await initDB()
+  const tx = db.transaction([CARDS_STORE, SETTINGS_STORE], 'readwrite')
+  // Its failure is handled below, once every write has settled.
+  tx.done.catch(() => {})
+  const cards = tx.objectStore(CARDS_STORE)
+  const settings = tx.objectStore(SETTINGS_STORE)
+  // A put can also throw at once (e.g. DataCloneError): count that as a refused write too.
+  const attempt = (write: Write): Promise<unknown> => {
+    try {
+      if (write.store === CARDS_STORE) return cards.put(write.value, write.key)
+      return write.value === undefined ? settings.delete(write.key) : settings.put(write.value, write.key)
+    } catch (error) {
+      return Promise.reject(error)
+    }
+  }
+  const results = await Promise.allSettled(writes.map(attempt))
+  const refused = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
+  if (refused) {
+    // Any write refused: roll every one back.
+    try {
+      tx.abort()
+    } catch {
+      // Already aborted by the browser
+    }
+    throw refused.reason
+  }
+  await tx.done
+}
+
+/** The writes that replace the cards an earlier version left in clear text with sealed ones. */
+async function sealPlainCards(key: CryptoKey): Promise<Write[]> {
+  const db = await initDB()
+  const plain = (await db.getAll(CARDS_STORE)).filter(isPlainCard)
+  return Promise.all(
+    plain.map(async card => ({ store: CARDS_STORE, key: card.id, value: await sealCard(key, card) }) as const)
+  )
+}
+
+/** A new passkey, and the record that seals the vault key's raw bytes under its PRF output. */
+async function registerPasskey(raw: ArrayBuffer): Promise<{ record: PasskeyRecord; prfKey: CryptoKey }> {
+  const prfSalt = crypto.getRandomValues(new Uint8Array(32)).buffer
+  const { credentialId, prfOutput } = await createPasskey(prfSalt)
+  const prfKey = await keyFromPrf(prfOutput)
+  const record: PasskeyRecord = {
+    version: 1,
+    credentialId,
+    prfSalt: arrayBufferToBase64(prfSalt),
+    wrapped: await seal(prfKey, arrayBufferToBase64(raw), PASSKEY_CONTEXT),
+  }
+  return { record, prfKey }
+}
+
+/** Asks for the passkey and returns the key from its PRF output, checked against `record`. */
+async function promptPasskey(record: PasskeyRecord): Promise<{ prfKey: CryptoKey; raw: ArrayBuffer }> {
+  const prfOutput = await getPrfOutput(record.credentialId, base64ToArrayBuffer(record.prfSalt))
+  const prfKey = await keyFromPrf(prfOutput)
+  try {
+    return { prfKey, raw: base64ToArrayBuffer(await unseal(prfKey, record.wrapped, PASSKEY_CONTEXT)) }
+  } catch {
+    throw new PasskeyMismatchError()
+  }
 }
 
 async function getVaultMeta(): Promise<VaultMeta | undefined> {
@@ -207,56 +305,52 @@ export async function createVault(password: string): Promise<void> {
   if (await getVaultMeta()) throw new Error('A vault already exists')
   const salt = newSalt()
   const key = await deriveVaultKey(password, salt, ITERATIONS)
-  const meta: VaultMeta = {
+  const meta: PasswordVaultMeta = {
     version: 1,
     kdf: 'PBKDF2-SHA256',
     iterations: ITERATIONS,
     salt,
     check: await seal(key, CHECK_TEXT, CHECK_CONTEXT),
   }
-
-  const db = await initDB()
-  const plain = (await db.getAll(CARDS_STORE)).filter(isPlainCard)
-  // Encrypt first: a transaction cannot wait on WebCrypto without committing early.
-  const sealed = await Promise.all(plain.map(async card => [card.id, await sealCard(key, card)] as const))
-
-  const tx = db.transaction([CARDS_STORE, SETTINGS_STORE], 'readwrite')
-  // Its failure is handled below, once every write has settled.
-  tx.done.catch(() => {})
-  const cards = tx.objectStore(CARDS_STORE)
-  const settings = tx.objectStore(SETTINGS_STORE)
-  // A put can also throw at once (e.g. DataCloneError): count that as a refused write too.
-  const attempt = (write: () => Promise<unknown>) => {
-    try {
-      return write()
-    } catch (error) {
-      return Promise.reject(error)
-    }
-  }
-  const writes = await Promise.allSettled([
-    ...sealed.map(([id, record]) => attempt(() => cards.put(record, id))),
-    attempt(() => settings.put(meta, VAULT_KEY)),
-    attempt(() => settings.put(true, 'useEncryption')),
+  await writeAll([
+    ...(await sealPlainCards(key)),
+    { store: SETTINGS_STORE, key: VAULT_KEY, value: meta },
+    { store: SETTINGS_STORE, key: 'useEncryption', value: true },
   ])
-  const refused = writes.find((w): w is PromiseRejectedResult => w.status === 'rejected')
-  if (refused) {
-    // Any write refused: roll every one back, so the plain cards stay as they were.
-    try {
-      tx.abort()
-    } catch {
-      // Already aborted by the browser
-    }
-    throw refused.reason
-  }
-  await tx.done
-
   session = { key, meta }
+}
+
+/**
+ * Creates the vault with no password: a random key, sealed under a new passkey's PRF output (the
+ * system prompt shows). Like `createVault`, plain cards are sealed in the same transaction.
+ * @throws PasskeyUnsupportedError, PasskeyCancelledError (nothing is created then)
+ */
+export async function createVaultWithPasskey(): Promise<void> {
+  if (await getVaultMeta()) throw new Error('A vault already exists')
+  const raw = crypto.getRandomValues(new Uint8Array(32)).buffer
+  const key = await importVaultKey(raw)
+  const meta: PasskeyVaultMeta = { version: 1, kdf: 'none', check: await seal(key, CHECK_TEXT, CHECK_CONTEXT) }
+  const { record, prfKey } = await registerPasskey(raw)
+  await writeAll([
+    ...(await sealPlainCards(key)),
+    { store: SETTINGS_STORE, key: VAULT_KEY, value: meta },
+    { store: SETTINGS_STORE, key: PASSKEY_KEY, value: record },
+    { store: SETTINGS_STORE, key: 'useEncryption', value: true },
+  ])
+  session = { key, meta, prfKey }
+}
+
+/** Whether the vault has a master password (a vault created with a passkey only has none). */
+export async function hasPassword(): Promise<boolean> {
+  const meta = await getVaultMeta()
+  return meta !== undefined && hasPasswordMeta(meta)
 }
 
 /** @throws WrongPasswordError */
 export async function unlockVault(password: string): Promise<void> {
   const meta = await getVaultMeta()
   if (!meta) throw new Error('No vault to unlock')
+  if (!hasPasswordMeta(meta)) throw new Error('This vault has no password')
   const key = await deriveVaultKey(password, meta.salt, meta.iterations)
   if (!(await opensVault(key, meta))) throw new WrongPasswordError()
   session = { key, meta }
@@ -288,20 +382,15 @@ export async function hasPasskeyUnlock(): Promise<boolean> {
  * @throws VaultLockedError, WrongPasswordError, PasskeyUnsupportedError, PasskeyCancelledError
  */
 export async function enablePasskeyUnlock(password: string): Promise<void> {
-  const { meta } = unlocked()
-  const raw = await deriveVaultKeyBits(password, meta.salt, meta.iterations)
-  if (!(await opensVault(await importVaultKey(raw), meta))) throw new WrongPasswordError()
+  const current = unlocked()
+  if (!hasPasswordMeta(current.meta)) throw new Error('This vault already opens with its passkey')
+  const raw = await deriveVaultKeyBits(password, current.meta.salt, current.meta.iterations)
+  if (!(await opensVault(await importVaultKey(raw), current.meta))) throw new WrongPasswordError()
 
-  const prfSalt = crypto.getRandomValues(new Uint8Array(32)).buffer
-  const { credentialId, prfOutput } = await createPasskey(prfSalt)
-  const record: PasskeyRecord = {
-    version: 1,
-    credentialId,
-    prfSalt: arrayBufferToBase64(prfSalt),
-    wrapped: await seal(await keyFromPrf(prfOutput), arrayBufferToBase64(raw), PASSKEY_CONTEXT),
-  }
+  const { record, prfKey } = await registerPasskey(raw)
   const db = await initDB()
   await db.put(SETTINGS_STORE, record, PASSKEY_KEY)
+  session = { ...current, prfKey }
 }
 
 /**
@@ -313,22 +402,100 @@ export async function unlockWithPasskey(): Promise<void> {
   const record = await getPasskeyRecord()
   if (!meta || !record) throw new Error('No passkey to unlock with')
 
-  const prfOutput = await getPrfOutput(record.credentialId, base64ToArrayBuffer(record.prfSalt))
+  const { prfKey, raw } = await promptPasskey(record)
   let key: CryptoKey
   try {
-    const raw = await unseal(await keyFromPrf(prfOutput), record.wrapped, PASSKEY_CONTEXT)
-    key = await importVaultKey(base64ToArrayBuffer(raw))
+    key = await importVaultKey(raw)
   } catch {
     throw new PasskeyMismatchError()
   }
   if (!(await opensVault(key, meta))) throw new PasskeyMismatchError()
-  session = { key, meta }
+  session = { key, meta, prfKey }
 }
 
-/** Stops unlocking with the passkey. The passkey itself stays in the device's password manager. */
+/**
+ * Stops unlocking with the passkey. The passkey itself stays in the device's password manager.
+ * @throws Error when the vault has no password: the passkey is then the only way in
+ */
 export async function disablePasskeyUnlock(): Promise<void> {
+  const meta = await getVaultMeta()
+  if (meta && !hasPasswordMeta(meta)) throw new Error('Set a password before turning off the passkey')
   const db = await initDB()
   await db.delete(SETTINGS_STORE, PASSKEY_KEY)
+}
+
+/**
+ * Sets the master password (a vault without one) or changes it, a forgotten one included: every
+ * card is sealed again under the key the new password derives, with the passkey record and the
+ * device key, in one transaction (all or nothing). Who asks is confirmed first: with the passkey
+ * when there is one (no prompt if it just unlocked the vault), otherwise with the current password.
+ * @throws VaultLockedError, WrongPasswordError, PasskeyCancelledError, PasskeyMismatchError
+ */
+export async function setVaultPassword(newPassword: string, currentPassword?: string): Promise<void> {
+  const current = unlocked()
+  const db = await initDB()
+  const record = await getPasskeyRecord()
+  let prfKey = current.prfKey
+  if (record) {
+    if (!prfKey) {
+      prfKey = (await promptPasskey(record)).prfKey
+    } else {
+      try {
+        await unseal(prfKey, record.wrapped, PASSKEY_CONTEXT)
+      } catch {
+        throw new PasskeyMismatchError()
+      }
+    }
+  } else if (hasPasswordMeta(current.meta)) {
+    const confirmed =
+      currentPassword !== undefined &&
+      (await opensVault(
+        await deriveVaultKey(currentPassword, current.meta.salt, current.meta.iterations),
+        current.meta
+      ))
+    if (!confirmed) throw new WrongPasswordError()
+  }
+
+  const salt = newSalt()
+  const raw = await deriveVaultKeyBits(newPassword, salt, ITERATIONS)
+  const key = await importVaultKey(raw)
+  const meta: PasswordVaultMeta = {
+    version: 1,
+    kdf: 'PBKDF2-SHA256',
+    iterations: ITERATIONS,
+    salt,
+    check: await seal(key, CHECK_TEXT, CHECK_CONTEXT),
+  }
+
+  const writes: Write[] = []
+  for (const id of await db.getAllKeys(CARDS_STORE)) {
+    const value = await db.get(CARDS_STORE, id)
+    if (!value) continue
+    let card: LoyaltyCard | null = null
+    if (isSealed(value)) {
+      try {
+        card = JSON.parse(await unseal(current.key, value, cardContext(String(id)))) as LoyaltyCard
+      } catch {
+        // Unreadable under the current key already: left as is
+      }
+    } else if (isPlainCard(value)) {
+      card = value
+    }
+    if (card) writes.push({ store: CARDS_STORE, key: String(id), value: await sealCard(key, card) })
+  }
+  writes.push({ store: SETTINGS_STORE, key: VAULT_KEY, value: meta })
+  if (record && prfKey) {
+    writes.push({
+      store: SETTINGS_STORE,
+      key: PASSKEY_KEY,
+      value: { ...record, wrapped: await seal(prfKey, arrayBufferToBase64(raw), PASSKEY_CONTEXT) },
+    })
+  }
+  if ((await db.get(SETTINGS_STORE, DEVICE_KEY)) !== undefined) {
+    writes.push({ store: SETTINGS_STORE, key: DEVICE_KEY, value: key })
+  }
+  await writeAll(writes)
+  session = { key, meta, prfKey }
 }
 
 /** Whether the vault key is kept on this device ("don't ask on this device"). */
@@ -351,10 +518,13 @@ export async function setRememberDevice(remember: boolean): Promise<void> {
   }
 }
 
-/** The vault's salt and rounds, to write backups the master password opens. */
-export function vaultKdf(): { key: CryptoKey; salt: string; iterations: number } {
+/**
+ * The vault's salt and rounds, to write backups the master password opens; null for a vault
+ * without a password (a backup then needs one of its own).
+ */
+export function vaultKdf(): { key: CryptoKey; salt: string; iterations: number } | null {
   const { key, meta } = unlocked()
-  return { key, salt: meta.salt, iterations: meta.iterations }
+  return hasPasswordMeta(meta) ? { key, salt: meta.salt, iterations: meta.iterations } : null
 }
 
 /**

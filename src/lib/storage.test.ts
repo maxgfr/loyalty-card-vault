@@ -223,6 +223,94 @@ describe('vault storage', () => {
     })
   })
 
+  describe('vault without a password', () => {
+    it('is created and opened with its passkey only, plain cards sealed', async () => {
+      await seedPlain([card('a', '4006381333931', 'Grocery Club')])
+      await storage.createVaultWithPasskey()
+      expect(await storage.getVaultState()).toBe('unlocked')
+      expect(await storage.hasPassword()).toBe(false)
+      expect(await storage.hasPasskeyUnlock()).toBe(true)
+      expect(await rawDump()).not.toContain('4006381333931')
+
+      const next = await relaunch()
+      expect(await next.getVaultState()).toBe('locked')
+      await expect(next.unlockVault('Secret123')).rejects.toThrow()
+      await next.unlockWithPasskey()
+      expect((await next.getAllCards()).map(c => c.name)).toEqual(['Grocery Club'])
+    })
+
+    it('keeps its passkey: the only way in', async () => {
+      await storage.createVaultWithPasskey()
+      await expect(storage.disablePasskeyUnlock()).rejects.toThrow()
+      expect(await storage.hasPasskeyUnlock()).toBe(true)
+    })
+
+    it('gets a password later; both open it', async () => {
+      await storage.createVaultWithPasskey()
+      await storage.saveCard(card('a', '111'))
+      await storage.setVaultPassword('Secret123')
+      expect(await storage.hasPassword()).toBe(true)
+
+      let next = await relaunch()
+      await next.unlockVault('Secret123')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+      next = await relaunch()
+      await next.unlockWithPasskey()
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+    })
+  })
+
+  describe('changing the password', () => {
+    it('without a passkey, needs the current password; nothing changes otherwise', async () => {
+      await storage.createVault('Secret123')
+      await storage.saveCard(card('a', '111'))
+      await expect(storage.setVaultPassword('Newpass456')).rejects.toBeInstanceOf(storage.WrongPasswordError)
+      await expect(storage.setVaultPassword('Newpass456', 'Wrong1234')).rejects.toBeInstanceOf(
+        storage.WrongPasswordError
+      )
+      await storage.setVaultPassword('Newpass456', 'Secret123')
+
+      const next = await relaunch()
+      await expect(next.unlockVault('Secret123')).rejects.toBeInstanceOf(next.WrongPasswordError)
+      await next.unlockVault('Newpass456')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+    })
+
+    it('a forgotten password: unlocked with the passkey, a new one is set, cards kept', async () => {
+      await storage.createVault('Forgotten1')
+      await storage.saveCard(card('a', '4006381333931'))
+      await storage.enablePasskeyUnlock('Forgotten1')
+      await storage.setRememberDevice(true)
+
+      let next = await relaunch()
+      await next.lockVault()
+      next = await relaunch()
+      await next.unlockWithPasskey()
+      await next.setVaultPassword('Newpass456')
+      expect(await rawDump()).not.toContain('4006381333931')
+
+      next = await relaunch()
+      await expect(next.unlockVault('Forgotten1')).rejects.toBeInstanceOf(next.WrongPasswordError)
+      await next.unlockVault('Newpass456')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+      // The passkey was sealed again with the new key
+      next = await relaunch()
+      await next.unlockWithPasskey()
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+    })
+
+    it('keeps "don\'t ask on this device" working with the new key', async () => {
+      await storage.createVault('Secret123')
+      await storage.saveCard(card('a', '111'))
+      await storage.setRememberDevice(true)
+      await storage.setVaultPassword('Newpass456', 'Secret123')
+
+      const next = await relaunch()
+      expect(await next.getVaultState()).toBe('unlocked')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+    })
+  })
+
   describe("don't ask on this device", () => {
     it('opens the vault on the next launch, until Lock Now', async () => {
       await storage.createVault('Secret123')

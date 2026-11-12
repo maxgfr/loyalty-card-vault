@@ -1,19 +1,37 @@
 import type { BackupData, EncryptedPayload, LoyaltyCard } from '../types'
 import { getAllCards, importCardsRaw, vaultKdf } from './storage'
-import { decrypt, seal, unseal } from './crypto'
+import { decrypt, encrypt, seal, unseal } from './crypto'
 import { validateBackup } from './validation'
 
 /**
  * A backup is a JSON file (BackupData). New backups are always encrypted: `cards` is an
  * EncryptedPayload of the cards' JSON, AES-256-GCM under PBKDF2-SHA256(master password, salt,
- * iterations), so the master password opens it in any vault. Unencrypted backups of earlier
- * versions (`encrypted: false`, `cards` a plain array) can still be imported.
+ * iterations), so the master password opens it in any vault. A vault without a password (passkey
+ * only) encrypts it under a password given for this backup, in the same format. Unencrypted
+ * backups of earlier versions (`encrypted: false`, `cards` a plain array) can still be imported.
  */
-export async function exportBackup(): Promise<Blob> {
+export class BackupPasswordRequiredError extends Error {
+  constructor() {
+    super('This vault has no password: choose one for the backup')
+    this.name = 'BackupPasswordRequiredError'
+  }
+}
+
+/**
+ * @param password the backup's own password, for a vault without one (ignored otherwise)
+ * @throws BackupPasswordRequiredError
+ */
+export async function exportBackup(password?: string): Promise<Blob> {
   const cards = await getAllCards()
-  const { key, salt, iterations } = vaultKdf()
-  const sealed = await seal(key, JSON.stringify(cards))
-  const payload: EncryptedPayload = { ...sealed, salt, iterations }
+  const kdf = vaultKdf()
+  let payload: EncryptedPayload
+  if (kdf) {
+    payload = { ...(await seal(kdf.key, JSON.stringify(cards))), salt: kdf.salt, iterations: kdf.iterations }
+  } else if (password) {
+    payload = await encrypt(JSON.stringify(cards), password)
+  } else {
+    throw new BackupPasswordRequiredError()
+  }
 
   const backupData: BackupData = {
     version: 1,
@@ -42,11 +60,11 @@ function cardsIn(list: unknown[]): LoyaltyCard[] {
 }
 
 async function openPayload(payload: EncryptedPayload, password?: string): Promise<string | null> {
-  const { key, salt, iterations } = vaultKdf()
+  const kdf = vaultKdf()
   // Exported from this vault: its key opens it without asking.
-  if (payload.salt === salt && payload.iterations === iterations) {
+  if (kdf && payload.salt === kdf.salt && payload.iterations === kdf.iterations) {
     try {
-      return await unseal(key, payload)
+      return await unseal(kdf.key, payload)
     } catch {
       // Same salt by chance only: try the password below
     }

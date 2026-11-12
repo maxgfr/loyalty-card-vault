@@ -13,6 +13,12 @@ const card = (id: string, barcodeData: string): LoyaltyCard => ({
   updatedAt: 1,
 })
 
+vi.mock('./passkey', async importOriginal => ({
+  ...(await importOriginal<typeof import('./passkey')>()),
+  createPasskey: async () => ({ credentialId: 'Y3JlZGVudGlhbA==', prfOutput: new Uint8Array(32).fill(7).buffer }),
+  getPrfOutput: async () => new Uint8Array(32).fill(7).buffer,
+}))
+
 let storage: typeof import('./storage')
 let backup: typeof import('./backup')
 
@@ -35,6 +41,22 @@ const fileOf = (text: string) => ({ text: async () => text }) as unknown as File
 const asFile = async (blob: Blob) => fileOf(await readText(blob))
 
 describe('backups', () => {
+  it('from a vault without a password: a password of its own, which opens it elsewhere', async () => {
+    await storage.createVaultWithPasskey()
+    await storage.saveCard(card('a', '4006381333931'))
+    await expect(backup.exportBackup()).rejects.toBeInstanceOf(backup.BackupPasswordRequiredError)
+    const blob = await backup.exportBackup('Backup123')
+    const text = await readText(blob)
+    expect(JSON.parse(text).encrypted).toBe(true)
+    expect(text).not.toContain('4006381333931')
+
+    await storage.clearAllData()
+    await storage.createVault('Other4567')
+    const file = fileOf(text)
+    expect(await backup.importBackup(file)).toMatchObject({ success: false, needsPassword: true })
+    expect(await backup.importBackup(file, 'Backup123')).toMatchObject({ success: true, cardCount: 1 })
+  })
+
   it('exports an encrypted file that holds no card in clear', async () => {
     await storage.createVault('Secret123')
     await storage.saveCard(card('a', '4006381333931'))
