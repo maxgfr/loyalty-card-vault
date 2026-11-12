@@ -24,7 +24,7 @@ pnpm lint             # Lint code with ESLint
 
 ## Test Coverage
 
-Current test coverage: **141 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
+Current test coverage: **142 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
 - Unit tests for hooks (useCards)
 - Component tests (CardList)
 - Library tests (crypto, validation, backup, share-url, storage with `fake-indexeddb`: vault, migration, backups)
@@ -60,6 +60,7 @@ Feature-based structure under `src/components/`:
 - Each card is stored sealed (`{ v: 1, iv, data }`), its id as additional authenticated data
 - `createVault` encrypts plain cards left by earlier versions in the same transaction that records the vault (all or nothing)
 - Theme settings (light/dark/auto)
+- `saveLastOpenCard(id | null)` / `getLastOpenCard()`: the card open when the app was closed (`lastOpenCardId` settings key, id only, not encrypted). `App` reopens it after the first unlock when the app was launched on the list, and clears it whenever the list is shown
 - `clearAllData()` for complete reset (also locks)
 - Settings stored separately from card data
 

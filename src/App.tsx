@@ -10,7 +10,16 @@ import { ToastContainer } from './components/ui/Toast'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useCards } from './hooks/useCards'
 import { SharePage } from './components/share/SharePage'
-import { countPlainCards, getSettings, getVaultState, lockVault, saveSettings, type VaultState } from './lib/storage'
+import {
+  countPlainCards,
+  getLastOpenCard,
+  getSettings,
+  getVaultState,
+  lockVault,
+  saveLastOpenCard,
+  saveSettings,
+  type VaultState,
+} from './lib/storage'
 import { SetupPage } from './components/setup/SetupPage'
 import { UnlockPage } from './components/setup/UnlockPage'
 import type { ScanResult, LoyaltyCard } from './types'
@@ -34,7 +43,12 @@ function App() {
   const { route, navigate, goBack } = useHashRouter()
   const [vault, setVault] = useState<VaultState | null>(null)
   const [plainCardCount, setPlainCardCount] = useState(0)
-  const { cards, addCard, updateCard, deleteCard, markCardUsed, refreshCards } = useCards(vault === 'unlocked')
+  const { cards, isLoading: cardsLoading, addCard, updateCard, deleteCard, markCardUsed, refreshCards } =
+    useCards(vault === 'unlocked')
+  // Launched on the list (the home screen icon, not a share or card link): the card that was open
+  // when the app was closed can be reopened.
+  const [launchedOnHome] = useState(() => route.page === 'home')
+  const [lastCardRestored, setLastCardRestored] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' }>>([])
 
@@ -64,6 +78,32 @@ function App() {
   useEffect(() => {
     initializeApp()
   }, [initializeApp])
+
+  // Once the cards are loaded after the first unlock, reopen the card that was open last time.
+  useEffect(() => {
+    if (vault !== 'unlocked' || cardsLoading || lastCardRestored) return
+    let active = true
+    ;(launchedOnHome ? getLastOpenCard() : Promise.resolve(null))
+      .then(id => {
+        if (active && id && cards.some(c => c.id === id)) navigate({ page: 'card', cardId: id })
+      })
+      .catch(err => console.error('Failed to read the last opened card:', err))
+      .finally(() => {
+        if (active) setLastCardRestored(true)
+      })
+    return () => {
+      active = false
+    }
+  }, [vault, cardsLoading, lastCardRestored, launchedOnHome, cards, navigate])
+
+  // Then keep track of it: a card opened, or the list (other pages keep the card they came from).
+  useEffect(() => {
+    if (vault !== 'unlocked' || !lastCardRestored) return
+    if (route.page !== 'card' && route.page !== 'home') return
+    saveLastOpenCard(route.page === 'card' ? route.cardId : null).catch(err =>
+      console.error('Failed to remember the open card:', err)
+    )
+  }, [vault, lastCardRestored, route])
 
   const addToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     const id = `toast-${toastIdCounter++}`

@@ -15,7 +15,10 @@ interface UseCardsReturn {
   refreshCards: () => Promise<void>
 }
 
-/** The vault's cards; `unlocked` false (locked or not set up) keeps the list empty. */
+/**
+ * The vault's cards; `unlocked` false (locked or not set up) keeps the list empty, and `isLoading`
+ * true until the unlocked vault's cards are loaded.
+ */
 export function useCards(unlocked = true): UseCardsReturn {
   const [cards, setCards] = useState<LoyaltyCard[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -24,7 +27,9 @@ export function useCards(unlocked = true): UseCardsReturn {
   const loadCards = useCallback(async () => {
     if (!unlocked) {
       setCards([])
-      setIsLoading(false)
+      // Nothing to load until unlocked: stay "loading" so that the first render after an unlock
+      // does not pass for an empty vault.
+      setIsLoading(true)
       return
     }
     try {

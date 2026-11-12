@@ -152,6 +152,14 @@ describe('vault storage', () => {
     })
   })
 
+  it('remembers the last opened card until the list is shown again', async () => {
+    expect(await storage.getLastOpenCard()).toBeNull()
+    await storage.saveLastOpenCard('a')
+    expect(await storage.getLastOpenCard()).toBe('a')
+    await storage.saveLastOpenCard(null)
+    expect(await storage.getLastOpenCard()).toBeNull()
+  })
+
   it('reset removes the vault and locks', async () => {
     await storage.createVault('Secret123')
     await storage.saveCard(card('a', '111'))
