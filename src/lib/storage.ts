@@ -337,6 +337,28 @@ export async function updateTheme(theme: 'light' | 'dark' | 'auto'): Promise<voi
   await db.put(SETTINGS_STORE, theme, 'theme')
 }
 
+const LAST_OPEN_CARD_KEY = 'lastOpenCardId'
+
+/**
+ * Remember which card is open (null: the list is), to reopen it on the next launch.
+ * Only the id is kept, in clear like the theme: it says nothing about the card.
+ */
+export async function saveLastOpenCard(id: string | null): Promise<void> {
+  const db = await initDB()
+  if (id) {
+    await db.put(SETTINGS_STORE, id, LAST_OPEN_CARD_KEY)
+  } else {
+    await db.delete(SETTINGS_STORE, LAST_OPEN_CARD_KEY)
+  }
+}
+
+/** The card that was open when the app was last closed, if any. */
+export async function getLastOpenCard(): Promise<string | null> {
+  const db = await initDB()
+  const id = await db.get(SETTINGS_STORE, LAST_OPEN_CARD_KEY)
+  return typeof id === 'string' ? id : null
+}
+
 /**
  * Clear all data (cards, settings and the vault itself), then lock
  * Use with caution - this will delete everything!

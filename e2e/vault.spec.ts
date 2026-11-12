@@ -163,6 +163,30 @@ test.describe('Vault encryption', () => {
     await expect(page.getByText('Pharmacy')).toBeVisible()
   })
 
+  test('the card open when the app was closed opens again on the next launch', async ({ page }) => {
+    await freshStart(page)
+    await page.reload()
+    await setPassword(page, PASSWORD)
+    await addCard(page, 'Bakery', '4006381333931')
+    await addCard(page, 'Garage', '5012345678900')
+    await page.locator('.card-item-wrapper', { hasText: 'Bakery' }).click()
+    await expect(page.getByRole('heading', { level: 2, name: 'Bakery' })).toBeVisible()
+
+    // Launched from the home screen icon: the start URL, without the card's hash.
+    await page.goto('/')
+    await unlock(page, PASSWORD)
+    await expect(page.getByRole('heading', { level: 2, name: 'Bakery' })).toBeVisible()
+    await expect(page).toHaveURL(/#\/card\//)
+
+    // Back to the list, then closed: the list opens next time.
+    await page.goBack()
+    await expect(page.locator('.card-item-wrapper')).toHaveCount(2)
+    await page.goto('/')
+    await unlock(page, PASSWORD)
+    await expect(page.locator('.card-item-wrapper')).toHaveCount(2)
+    await expect(page.getByRole('heading', { level: 2, name: 'Bakery' })).toHaveCount(0)
+  })
+
   test('a forgotten password: the vault can be erased and set up again', async ({ page }) => {
     await freshStart(page)
     await page.reload()

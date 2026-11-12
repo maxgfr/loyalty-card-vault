@@ -5,7 +5,7 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 ![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
 ![React 19](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Tests](https://img.shields.io/badge/Tests-141%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-142%20passing-success)
 
 ## ✨ Features
 
@@ -22,6 +22,7 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 - **Visual Cards**: Beautiful card UI with customizable colors
 - **Tags & Search**: Organize with tags and search by name/store
 - **Flip Cards**: Front shows card info, back shows barcode
+- **Reopens Your Last Card**: The card that was open when you closed the app opens again on the next launch (the list, if that was what you had open)
 
 ### 📤 Encrypted URL Sharing
 - **Share via URL**: Generate encrypted URLs for sharing cards
