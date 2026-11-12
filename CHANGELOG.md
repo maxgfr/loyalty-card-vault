@@ -1,3 +1,9 @@
+## [1.12.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.11.0...v1.12.0) (2026-11-12)
+
+### Features
+
+* set up the vault without a lock ([#23](https://github.com/maxgfr/loyalty-card-vault/issues/23)) ([639a4a9](https://github.com/maxgfr/loyalty-card-vault/commit/639a4a91183387cc0546990b9a51f9a68b74aaaa))
+
 ## [1.11.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.10.0...v1.11.0) (2026-11-12)
 
 ### Features
