@@ -5,18 +5,20 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 ![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
 ![React 19](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Tests](https://img.shields.io/badge/Tests-152%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-159%20passing-success)
 
 ## ✨ Features
 
 ### 🔐 Security First
 - **AES-256 Encryption**: Every card is encrypted at rest in IndexedDB
-- **Password Protection**: Mandatory password setup on first launch, unlock on every launch
+- **Passwordless Option**: On a device with Touch ID, Face ID or a fingerprint reader, create the vault with a passkey and no password (a password can be added later)
+- **Password Protection**: Or a password, asked on every launch unless biometric unlock is on
 - **Biometric Unlock**: Optionally open the app with Touch ID, Face ID or a fingerprint (a passkey) instead of typing the password
 - **Don't Ask on This Device**: Optionally keep the vault unlocked on a device you trust (see the trade-off below)
 - **No Cloud Storage**: Everything stored locally in IndexedDB
 - **Lock/Unlock Vault**: Neither the password nor the key is ever stored (unless you choose "Don't ask on this device"); the key lives in memory until you lock or close the app
-- **No recovery**: A forgotten password cannot be recovered. "Forgot your password?" on the unlock screen erases the vault so you can start over
+- **Forgotten password**: With biometric unlock on, "Forgot your password?" unlocks with it and lets you choose a new password, cards kept. Without it, the password cannot be recovered: the vault can only be erased to start over
+- **Change Password**: Settings → Password re-encrypts every card under the new password, all at once
 
 ### 📱 Card Management
 - **Barcode Scanning**: Camera-based scanning with ZXing (QR, EAN-13, UPC-A, CODE-128, etc.)
@@ -100,6 +102,7 @@ The app can be installed on mobile devices and desktop:
 - **Key Derivation**: PBKDF2-SHA256, 600,000 iterations, random 16-byte salt per vault
 - **Password Requirements**: Minimum 8 characters with letter + number
 - **Storage**: IndexedDB (`loyalty-card-vault`) holds the sealed cards and the vault record (salt, iteration count and a sealed check value to recognise the right password). Neither the password nor the key is stored: the key stays in memory (non-extractable) while unlocked
+- **No password (optional)**: a vault created with a passkey has a random 256-bit key (the `vault` record says `kdf: "none"`), sealed under the passkey's PRF output only. Setting a password later re-encrypts every card under PBKDF2(password), in one transaction, as does changing it (the passkey record and the device key follow)
 - **Upgrading**: cards saved unencrypted by earlier versions are encrypted when you set your password, in one transaction: if it fails, nothing changes
 - **Shared origin**: the app is served from `maxgfr.github.io`, whose storage every site there can read. They see ciphertext only
 - **Biometric unlock (optional)**: a passkey on the device's platform authenticator (Touch ID, Face ID, Android fingerprint, Windows Hello), used for its WebAuthn PRF output only (nothing goes to a server). The vault key's raw bytes are sealed (AES-256-GCM) under HKDF-SHA256(PRF output) and stored in the `passkey` settings record with the credential id and PRF salt; only the authenticator, after verifying you, can give that output back. Turning it on asks for the password, since the key in memory cannot be exported. Needs passkeys with PRF: Safari / iOS 18+, Chrome 132+, Firefox 135+. The password keeps working
@@ -110,7 +113,7 @@ The app can be installed on mobile devices and desktop:
 { "version": 1, "exportedAt": 1730000000000, "encrypted": true,
   "cards": { "iv": "…", "data": "…", "salt": "…", "iterations": 600000 } }
 ```
-`cards` decrypts (AES-256-GCM, key = PBKDF2-SHA256(password, salt, iterations)) to the JSON array of cards. Files without `iterations` were made with 100,000. Share links use the same payload, under their 6-character password.
+`cards` decrypts (AES-256-GCM, key = PBKDF2-SHA256(password, salt, iterations)) to the JSON array of cards. The password is the master password, or, for a vault without one, a password chosen for that backup. Files without `iterations` were made with 100,000. Share links use the same payload, under their 6-character password.
 
 ### Privacy
 - ✅ No telemetry or analytics

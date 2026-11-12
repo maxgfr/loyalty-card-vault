@@ -24,7 +24,7 @@ pnpm lint             # Lint code with ESLint
 
 ## Test Coverage
 
-Current test coverage: **152 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
+Current test coverage: **159 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
 - Unit tests for hooks (useCards)
 - Component tests (CardList)
 - Library tests (crypto, validation, backup, share-url, storage with `fake-indexeddb`: vault, migration, backups)
@@ -58,6 +58,7 @@ Feature-based structure under `src/components/`:
 - IndexedDB via `idb` library for persistent storage
 - **Mandatory** AES-256-GCM encryption: `createVault(password)` / `unlockVault(password)` derive the vault key (PBKDF2-SHA256, 600,000 rounds, salt in the `vault` settings record) and keep it in a module variable; `lockVault()` forgets it (and the `deviceKey` below). Card reads and writes throw `VaultLockedError` while locked
 - Biometric unlock (`src/lib/passkey.ts`, WebAuthn PRF, the only module touching `navigator.credentials`): `enablePasskeyUnlock(password)` seals the vault key's raw bytes under HKDF(PRF output) in the `passkey` settings record; `unlockWithPasskey()` opens it; `disablePasskeyUnlock()`, `hasPasskeyUnlock()`. Unit tests mock `./passkey`; e2e tests use a CDP virtual authenticator with `hasPrf`
+- No password: `createVaultWithPasskey()` makes a random key sealed under a new passkey only (`VaultMeta` with `kdf: 'none'`; `hasPassword()` false, `vaultKdf()` null, so `exportBackup(password)` needs a backup password). `setVaultPassword(newPassword, currentPassword?)` sets or changes the password: every card is re-sealed under the new key with the passkey record and the device key, through `writeAll` (one transaction); it confirms with the passkey when there is one (the session keeps the PRF key after a passkey unlock, so no second prompt), else with the current password. It also resets a forgotten password from the unlock screen
 - "Don't ask on this device": `setRememberDevice(true)` stores the non-extractable `CryptoKey` under `deviceKey`; `getVaultState()` then opens the vault with it
 - Each card is stored sealed (`{ v: 1, iv, data }`), its id as additional authenticated data
 - `createVault` encrypts plain cards left by earlier versions in the same transaction that records the vault (all or nothing)
@@ -105,7 +106,7 @@ Key functions:
 - React Compiler enabled via Babel plugin
 
 ### Encryption Flow
-1. Encryption is **mandatory** - all users must create a password during setup (no recovery if forgotten)
+1. Encryption is **mandatory**: setup creates the vault with a passkey (no password) when the device has a platform authenticator, or with a password. A forgotten password is reset with the passkey when there is one; otherwise it cannot be recovered
 2. Neither the password nor the derived key is persisted; the key lives in memory while unlocked
 3. Each card is sealed with AES-256-GCM under the vault key before IndexedDB storage
 4. Every launch shows the unlock screen (it prompts for the passkey by itself when one is set up, except right after "Lock Now"), unless "Don't ask on this device" is on; "Lock Now" in Settings forgets the key and turns that off

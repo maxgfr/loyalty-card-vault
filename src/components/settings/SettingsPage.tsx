@@ -15,10 +15,13 @@ import {
   disablePasskeyUnlock,
   enablePasskeyUnlock,
   hasPasskeyUnlock,
+  hasPassword,
   isDeviceRemembered,
   setRememberDevice,
+  setVaultPassword,
   WrongPasswordError,
 } from '../../lib/storage'
+import { passwordSchema } from '../../lib/validation'
 import { isPasskeyAvailable } from '../../lib/passkey'
 import { passkeyErrorMessage } from '../setup/passkeyMessages'
 import { createShareURL } from '../../lib/share-url'
@@ -72,6 +75,20 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
   const [passkeyPasswordError, setPasskeyPasswordError] = useState<string | undefined>()
   const [isEnablingPasskey, setIsEnablingPasskey] = useState(false)
   const [showRememberModal, setShowRememberModal] = useState(false)
+  // Master password: set (a vault created with a passkey only has none) or changed
+  const [vaultHasPassword, setVaultHasPassword] = useState(true)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | undefined>()
+  const [isSavingPassword, setIsSavingPassword] = useState(false)
+  // A backup from a vault without a password gets a password of its own
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportPassword, setExportPassword] = useState('')
+  const [confirmExportPassword, setConfirmExportPassword] = useState('')
+  const [exportPasswordError, setExportPasswordError] = useState<string | undefined>()
+  const [isExporting, setIsExporting] = useState(false)
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   const isAndroid = /Android/.test(navigator.userAgent)
@@ -80,14 +97,16 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
     const currentSettings = await getSettings()
     setSettings(currentSettings)
     applyTheme(currentSettings.theme)
-    const [enrolled, available, remembered] = await Promise.all([
+    const [enrolled, available, remembered, withPassword] = await Promise.all([
       hasPasskeyUnlock(),
       isPasskeyAvailable(),
       isDeviceRemembered(),
+      hasPassword(),
     ])
     setPasskeyEnabled(enrolled)
     setPasskeyAvailable(available)
     setDeviceRemembered(remembered)
+    setVaultHasPassword(withPassword)
   }, [])
 
   useEffect(() => {
@@ -179,13 +198,88 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
     }
   }
 
-  const handleExport = async () => {
+  /** The new password's problem, if any (same rules as the master password). */
+  const newPasswordProblem = (password: string, confirmation: string): string | undefined => {
+    const validation = passwordSchema.safeParse(password)
+    if (!validation.success) return validation.error.issues[0]?.message ?? 'Invalid password'
+    if (password !== confirmation) return 'Passwords do not match'
+    return undefined
+  }
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false)
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmNewPassword('')
+    setPasswordError(undefined)
+  }
+
+  // The current password is asked only when no passkey can confirm instead
+  const needsCurrentPassword = vaultHasPassword && !passkeyEnabled
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const problem = newPasswordProblem(newPassword, confirmNewPassword)
+    if (problem) {
+      setPasswordError(problem)
+      return
+    }
+    setIsSavingPassword(true)
     try {
-      const blob = await exportBackup()
-      downloadBackup(blob)
-      setMessage({ type: 'success', text: 'Backup exported successfully' })
+      await setVaultPassword(newPassword, needsCurrentPassword ? currentPassword : undefined)
+      const wasSet = vaultHasPassword
+      setVaultHasPassword(true)
+      closePasswordModal()
+      setMessage({ type: 'success', text: wasSet ? 'Password changed' : 'Password set' })
+    } catch (err) {
+      // Dismissed prompt: stay in the dialog
+      const text = err instanceof WrongPasswordError ? 'Wrong current password' : passkeyErrorMessage(err)
+      if (text) setPasswordError(text)
+    } finally {
+      setIsSavingPassword(false)
+    }
+  }
+
+  const exportWith = async (password?: string) => {
+    const blob = await exportBackup(password)
+    downloadBackup(blob)
+    setMessage({ type: 'success', text: 'Backup exported successfully' })
+  }
+
+  const handleExport = async () => {
+    if (!vaultHasPassword) {
+      setShowExportModal(true)
+      return
+    }
+    try {
+      await exportWith()
     } catch {
       setMessage({ type: 'error', text: 'Failed to export backup' })
+    }
+  }
+
+  const closeExportModal = () => {
+    setShowExportModal(false)
+    setExportPassword('')
+    setConfirmExportPassword('')
+    setExportPasswordError(undefined)
+  }
+
+  const handleExportPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const problem = newPasswordProblem(exportPassword, confirmExportPassword)
+    if (problem) {
+      setExportPasswordError(problem)
+      return
+    }
+    setIsExporting(true)
+    try {
+      await exportWith(exportPassword)
+      closeExportModal()
+    } catch {
+      setExportPasswordError('Failed to export backup')
+    } finally {
+      setIsExporting(false)
     }
   }
 
@@ -485,13 +579,15 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
         <Card>
           <h3 className="settings-section-title">👆 Unlock</h3>
           <p className="settings-section-description">
-            How the app opens on this device. Your password always works.
+            How the app opens on this device.{vaultHasPassword ? ' Your password always works.' : ''}
           </p>
           <div className="settings-actions">
             {passkeyEnabled ? (
-              <Button variant="secondary" onClick={handleDisablePasskey} fullWidth>
-                Turn Off Biometric Unlock
-              </Button>
+              vaultHasPassword && (
+                <Button variant="secondary" onClick={handleDisablePasskey} fullWidth>
+                  Turn Off Biometric Unlock
+                </Button>
+              )
             ) : (
               <Button
                 variant="secondary"
@@ -501,6 +597,11 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
               >
                 Unlock with Touch ID / Face ID
               </Button>
+            )}
+            {passkeyEnabled && !vaultHasPassword && (
+              <p className="settings-section-description">
+                Touch ID / Face ID opens this vault. Set a password below to be able to turn it off.
+              </p>
             )}
             {!passkeyEnabled && !passkeyAvailable && (
               <p className="settings-section-description">
@@ -517,6 +618,20 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
               </Button>
             )}
           </div>
+        </Card>
+
+        <Card>
+          <h3 className="settings-section-title">🔑 Password</h3>
+          <p className="settings-section-description">
+            {vaultHasPassword
+              ? passkeyEnabled
+                ? 'Choose a new master password, even a forgotten one: Touch ID / Face ID confirms it is you.'
+                : 'Choose a new master password. Your cards stay as they are.'
+              : 'This vault opens with its passkey only. A password lets you open it without the passkey.'}
+          </p>
+          <Button variant="secondary" onClick={() => setShowPasswordModal(true)} fullWidth>
+            {vaultHasPassword ? 'Change Password' : 'Set a Password'}
+          </Button>
         </Card>
 
         <Card>
@@ -642,6 +757,7 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
                   <li><strong>Local storage only</strong>: Nothing is sent over the Internet</li>
                   <li><strong>Mandatory encryption</strong>: All cards are encrypted with AES-256-GCM, under a key derived from your password (PBKDF2-SHA256, 600,000 rounds)</li>
                   <li><strong>Password never stored</strong>: The key exists only in memory while the vault is unlocked. A forgotten password cannot be recovered: keep a backup</li>
+                  <li><strong>No password (optional)</strong>: A vault created with Touch ID / Face ID has a random key that only its passkey opens. Add a password in Settings as a fallback; backups then get a password of their own</li>
                   <li><strong>Biometric unlock (optional)</strong>: A passkey (Touch ID, Face ID, fingerprint) releases the key; it is sealed under a secret only your device's authenticator gives back, after verifying you</li>
                   <li><strong>"Don't ask on this device" (optional)</strong>: The key is kept on this device so the app opens unlocked. Anyone holding your unlocked device, and any other site on maxgfr.github.io, could then read your cards. Lock Now turns it off</li>
                   <li><strong>No server</strong>: The app runs entirely on your device</li>
@@ -876,6 +992,122 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
           Anyone who can use this device, and any other site hosted on maxgfr.github.io, could then read
           your cards. Lock Now in Settings turns this off.
         </p>
+      </Modal>
+
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={closePasswordModal}
+        title={vaultHasPassword ? 'Change Password' : 'Set a Password'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={closePasswordModal} disabled={isSavingPassword}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="vault-password-form"
+              loading={isSavingPassword}
+              disabled={!newPassword || (needsCurrentPassword && !currentPassword)}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <form id="vault-password-form" onSubmit={handlePasswordSubmit} className="settings-actions">
+          {passkeyEnabled && <p>Touch ID / Face ID will confirm the change.</p>}
+          {needsCurrentPassword && (
+            <Input
+              type="password"
+              label="Current Password"
+              value={currentPassword}
+              onChange={e => {
+                setCurrentPassword(e.target.value)
+                setPasswordError(undefined)
+              }}
+              autoComplete="current-password"
+              autoFocus
+              fullWidth
+            />
+          )}
+          <Input
+            type="password"
+            label="New Password"
+            value={newPassword}
+            onChange={e => {
+              setNewPassword(e.target.value)
+              setPasswordError(undefined)
+            }}
+            autoComplete="new-password"
+            autoFocus={!needsCurrentPassword}
+            fullWidth
+          />
+          <Input
+            type="password"
+            label="Confirm New Password"
+            value={confirmNewPassword}
+            onChange={e => {
+              setConfirmNewPassword(e.target.value)
+              setPasswordError(undefined)
+            }}
+            error={passwordError}
+            autoComplete="new-password"
+            fullWidth
+          />
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={showExportModal}
+        onClose={closeExportModal}
+        title="Backup Password"
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeExportModal} disabled={isExporting}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="export-password-form"
+              loading={isExporting}
+              disabled={!exportPassword}
+            >
+              Export
+            </Button>
+          </>
+        }
+      >
+        <form id="export-password-form" onSubmit={handleExportPasswordSubmit} className="settings-actions">
+          <p>
+            This vault has no password: choose one for this backup. You will need it to import the file.
+          </p>
+          <Input
+            type="password"
+            label="Backup Password"
+            value={exportPassword}
+            onChange={e => {
+              setExportPassword(e.target.value)
+              setExportPasswordError(undefined)
+            }}
+            autoComplete="new-password"
+            autoFocus
+            fullWidth
+          />
+          <Input
+            type="password"
+            label="Confirm Backup Password"
+            value={confirmExportPassword}
+            onChange={e => {
+              setConfirmExportPassword(e.target.value)
+              setExportPasswordError(undefined)
+            }}
+            error={exportPasswordError}
+            autoComplete="new-password"
+            fullWidth
+          />
+        </form>
       </Modal>
 
       <ShareURLModal
