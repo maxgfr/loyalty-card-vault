@@ -1,3 +1,9 @@
+## [1.10.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.9.0...v1.10.0) (2026-11-12)
+
+### Features
+
+* unlock with Face ID / Touch ID, and an optional "don't ask" setting ([#21](https://github.com/maxgfr/loyalty-card-vault/issues/21)) ([efa9566](https://github.com/maxgfr/loyalty-card-vault/commit/efa9566320541c653209dc6f4ae53f777bf092c1)), closes [#18](https://github.com/maxgfr/loyalty-card-vault/issues/18)
+
 ## [1.9.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.4...v1.9.0) (2026-11-12)
 
 ### Features
