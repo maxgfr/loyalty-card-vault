@@ -6,6 +6,14 @@ import type { LoyaltyCard } from '../types'
 
 type Storage = typeof import('./storage')
 
+/** The passkey's PRF output, as the authenticator would return it (no WebAuthn in jsdom). */
+const passkey = vi.hoisted(() => ({ prf: new Uint8Array(32).fill(7).buffer as ArrayBuffer }))
+vi.mock('./passkey', async importOriginal => ({
+  ...(await importOriginal<typeof import('./passkey')>()),
+  createPasskey: async () => ({ credentialId: 'Y3JlZGVudGlhbA==', prfOutput: passkey.prf }),
+  getPrfOutput: async () => passkey.prf,
+}))
+
 const card = (id: string, barcodeData: string, name = `Card ${id}`): LoyaltyCard => ({
   id,
   name,
@@ -40,7 +48,14 @@ async function seedPlain(cards: LoyaltyCard[]): Promise<void> {
 
 let storage: Storage
 
+/** A new page load: the module (and the key in memory) starts over, IndexedDB stays. */
+async function relaunch(): Promise<Storage> {
+  vi.resetModules()
+  return import('./storage')
+}
+
 beforeEach(async () => {
+  passkey.prf = new Uint8Array(32).fill(7).buffer
   globalThis.indexedDB = new IDBFactory()
   vi.resetModules()
   storage = await import('./storage')
@@ -68,7 +83,7 @@ describe('vault storage', () => {
   it('refuses everything while locked, and unlocks only with the right password', async () => {
     await storage.createVault('Secret123')
     await storage.saveCard(card('a', '111'))
-    storage.lockVault()
+    await storage.lockVault()
 
     expect(await storage.getVaultState()).toBe('locked')
     await expect(storage.getAllCards()).rejects.toBeInstanceOf(storage.VaultLockedError)
@@ -111,7 +126,7 @@ describe('vault storage', () => {
       for (const secret of ['4006381333931', 'Grocery Club', '9780201379624', 'Bookshop']) {
         expect(dump).not.toContain(secret)
       }
-      storage.lockVault()
+      await storage.lockVault()
       await storage.unlockVault('Secret123')
       expect((await storage.getAllCards()).map(c => c.name).sort()).toEqual(['Bookshop', 'Grocery Club'])
       // Preferences survive
@@ -158,6 +173,91 @@ describe('vault storage', () => {
     expect(await storage.getLastOpenCard()).toBe('a')
     await storage.saveLastOpenCard(null)
     expect(await storage.getLastOpenCard()).toBeNull()
+  })
+
+  describe('passkey unlock', () => {
+    it('needs the unlocked vault and its password', async () => {
+      await storage.createVault('Secret123')
+      await expect(storage.enablePasskeyUnlock('Wrong1234')).rejects.toBeInstanceOf(storage.WrongPasswordError)
+      expect(await storage.hasPasskeyUnlock()).toBe(false)
+      await storage.lockVault()
+      await expect(storage.enablePasskeyUnlock('Secret123')).rejects.toBeInstanceOf(storage.VaultLockedError)
+    })
+
+    it('opens the vault on the next launch, without the password', async () => {
+      await storage.createVault('Secret123')
+      await storage.saveCard(card('a', '4006381333931', 'Grocery Club'))
+      await storage.enablePasskeyUnlock('Secret123')
+      expect(await storage.hasPasskeyUnlock()).toBe(true)
+      const dump = await rawDump()
+      expect(dump).not.toContain('4006381333931')
+      expect(dump).not.toContain('Secret123')
+
+      const next = await relaunch()
+      expect(await next.getVaultState()).toBe('locked')
+      await next.unlockWithPasskey()
+      expect(await next.getVaultState()).toBe('unlocked')
+      expect((await next.getAllCards()).map(c => c.name)).toEqual(['Grocery Club'])
+    })
+
+    it('another PRF output does not open it', async () => {
+      await storage.createVault('Secret123')
+      await storage.enablePasskeyUnlock('Secret123')
+      passkey.prf = new Uint8Array(32).fill(8).buffer
+
+      const next = await relaunch()
+      await expect(next.unlockWithPasskey()).rejects.toBeInstanceOf(next.PasskeyMismatchError)
+      expect(await next.getVaultState()).toBe('locked')
+    })
+
+    it('can be turned off, and the password still works', async () => {
+      await storage.createVault('Secret123')
+      await storage.enablePasskeyUnlock('Secret123')
+      await storage.disablePasskeyUnlock()
+      expect(await storage.hasPasskeyUnlock()).toBe(false)
+
+      const next = await relaunch()
+      await expect(next.unlockWithPasskey()).rejects.toThrow()
+      await next.unlockVault('Secret123')
+      expect(await next.getVaultState()).toBe('unlocked')
+    })
+  })
+
+  describe("don't ask on this device", () => {
+    it('opens the vault on the next launch, until Lock Now', async () => {
+      await storage.createVault('Secret123')
+      await storage.saveCard(card('a', '111'))
+      await storage.setRememberDevice(true)
+      expect(await storage.isDeviceRemembered()).toBe(true)
+
+      let next = await relaunch()
+      expect(await next.getVaultState()).toBe('unlocked')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+
+      await next.lockVault()
+      expect(await next.isDeviceRemembered()).toBe(false)
+      next = await relaunch()
+      expect(await next.getVaultState()).toBe('locked')
+    })
+
+    it('can be turned off', async () => {
+      await storage.createVault('Secret123')
+      await storage.setRememberDevice(true)
+      await storage.setRememberDevice(false)
+      expect(await (await relaunch()).getVaultState()).toBe('locked')
+    })
+
+    it('forgets a key that does not open the vault', async () => {
+      await storage.createVault('Secret123')
+      const stranger = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
+      const db = await openDB('loyalty-card-vault', 1)
+      await db.put('settings', stranger, 'deviceKey')
+      db.close()
+
+      const next = await relaunch()
+      expect(await next.getVaultState()).toBe('locked')
+      expect(await next.isDeviceRemembered()).toBe(false)
+    })
   })
 
   it('reset removes the vault and locks', async () => {

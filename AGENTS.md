@@ -24,7 +24,7 @@ pnpm lint             # Lint code with ESLint
 
 ## Test Coverage
 
-Current test coverage: **142 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
+Current test coverage: **152 unit tests passing**, plus Playwright end-to-end tests (`e2e/`)
 - Unit tests for hooks (useCards)
 - Component tests (CardList)
 - Library tests (crypto, validation, backup, share-url, storage with `fake-indexeddb`: vault, migration, backups)
@@ -56,7 +56,9 @@ Feature-based structure under `src/components/`:
 
 ### Storage Layer (`src/lib/storage.ts`)
 - IndexedDB via `idb` library for persistent storage
-- **Mandatory** AES-256-GCM encryption: `createVault(password)` / `unlockVault(password)` derive the vault key (PBKDF2-SHA256, 600,000 rounds, salt in the `vault` settings record) and keep it in a module variable; `lockVault()` forgets it. Card reads and writes throw `VaultLockedError` while locked
+- **Mandatory** AES-256-GCM encryption: `createVault(password)` / `unlockVault(password)` derive the vault key (PBKDF2-SHA256, 600,000 rounds, salt in the `vault` settings record) and keep it in a module variable; `lockVault()` forgets it (and the `deviceKey` below). Card reads and writes throw `VaultLockedError` while locked
+- Biometric unlock (`src/lib/passkey.ts`, WebAuthn PRF, the only module touching `navigator.credentials`): `enablePasskeyUnlock(password)` seals the vault key's raw bytes under HKDF(PRF output) in the `passkey` settings record; `unlockWithPasskey()` opens it; `disablePasskeyUnlock()`, `hasPasskeyUnlock()`. Unit tests mock `./passkey`; e2e tests use a CDP virtual authenticator with `hasPrf`
+- "Don't ask on this device": `setRememberDevice(true)` stores the non-extractable `CryptoKey` under `deviceKey`; `getVaultState()` then opens the vault with it
 - Each card is stored sealed (`{ v: 1, iv, data }`), its id as additional authenticated data
 - `createVault` encrypts plain cards left by earlier versions in the same transaction that records the vault (all or nothing)
 - Theme settings (light/dark/auto)
@@ -106,7 +108,7 @@ Key functions:
 1. Encryption is **mandatory** - all users must create a password during setup (no recovery if forgotten)
 2. Neither the password nor the derived key is persisted; the key lives in memory while unlocked
 3. Each card is sealed with AES-256-GCM under the vault key before IndexedDB storage
-4. Every launch shows the unlock screen; "Lock Now" in Settings forgets the key
+4. Every launch shows the unlock screen (it prompts for the passkey by itself when one is set up, except right after "Lock Now"), unless "Don't ask on this device" is on; "Lock Now" in Settings forgets the key and turns that off
 5. Backups are always exported encrypted (`BackupData` with an `EncryptedPayload` that the master password opens; see README). Import detects the format from the file: plain (earlier versions) or encrypted (asks for the password when it is not this vault's)
 
 ### Theme System
