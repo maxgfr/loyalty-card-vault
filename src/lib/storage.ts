@@ -22,7 +22,9 @@ import { sortByRecentUse } from './card-order'
  * is unlocked; it is never stored, nor is the password. IndexedDB belongs to the origin, which
  * every maxgfr.github.io app shares: without the password, what they can read is ciphertext.
  *
- * A vault can also have no password at all: its key is then random, and only its passkey opens it.
+ * A vault can also have no password at all: its key is then random, and only its passkey opens it,
+ * or no lock at all: the key is then kept on the device from the start ("don't ask on this device").
+ * Whatever the vault has, the last way in (password, passkey or device key) can never be removed.
  *
  * Two opt-in shortcuts open the vault without typing the password:
  * - a passkey (Touch ID, Face ID, fingerprint): the key's raw bytes, sealed under a key derived from
@@ -340,6 +342,29 @@ export async function createVaultWithPasskey(): Promise<void> {
   session = { key, meta, prfKey }
 }
 
+/**
+ * Creates the vault with no lock: a random key, kept on this device as with "don't ask on this
+ * device", so that the app opens straight away. A password or a passkey can be added later.
+ */
+export async function createVaultWithoutLock(): Promise<void> {
+  if (await getVaultMeta()) throw new Error('A vault already exists')
+  const key = await importVaultKey(crypto.getRandomValues(new Uint8Array(32)).buffer)
+  const meta: PasskeyVaultMeta = { version: 1, kdf: 'none', check: await seal(key, CHECK_TEXT, CHECK_CONTEXT) }
+  await writeAll([
+    ...(await sealPlainCards(key)),
+    { store: SETTINGS_STORE, key: VAULT_KEY, value: meta },
+    { store: SETTINGS_STORE, key: DEVICE_KEY, value: key },
+    { store: SETTINGS_STORE, key: 'useEncryption', value: true },
+  ])
+  session = { key, meta }
+}
+
+/** Whether the key kept on this device is the only way into the vault (no password, no passkey). */
+async function deviceKeyIsOnlyWayIn(): Promise<boolean> {
+  const meta = await getVaultMeta()
+  return meta !== undefined && !hasPasswordMeta(meta) && (await getPasskeyRecord()) === undefined
+}
+
 /** Whether the vault has a master password (a vault created with a passkey only has none). */
 export async function hasPassword(): Promise<boolean> {
   const meta = await getVaultMeta()
@@ -358,10 +383,13 @@ export async function unlockVault(password: string): Promise<void> {
 
 /**
  * Forgets the key, here and on this device ("don't ask on this device" is turned off): the cards
- * stay sealed until the vault is unlocked again.
+ * stay sealed until the vault is unlocked again. A vault without a lock keeps its device key, its
+ * only way in: it opens again on the next launch.
  */
 export async function lockVault(): Promise<void> {
+  const keep = await deviceKeyIsOnlyWayIn()
   session = null
+  if (keep) return
   const db = await initDB()
   await db.delete(SETTINGS_STORE, DEVICE_KEY)
 }
@@ -377,20 +405,60 @@ export async function hasPasskeyUnlock(): Promise<boolean> {
 }
 
 /**
- * Registers a passkey that unlocks the vault. The password is asked again: the key in memory is
- * non-extractable, so its raw bytes are derived from the password once more, to be sealed.
+ * Registers a passkey that unlocks the vault. With a password, it is asked again: the key in memory
+ * is non-extractable, so its raw bytes are derived from the password once more, to be sealed.
+ * Without a password (a vault without a lock), the vault gets a new random key instead: every card
+ * is sealed again under it, with the device key, in one transaction.
  * @throws VaultLockedError, WrongPasswordError, PasskeyUnsupportedError, PasskeyCancelledError
  */
-export async function enablePasskeyUnlock(password: string): Promise<void> {
+export async function enablePasskeyUnlock(password?: string): Promise<void> {
   const current = unlocked()
-  if (!hasPasswordMeta(current.meta)) throw new Error('This vault already opens with its passkey')
-  const raw = await deriveVaultKeyBits(password, current.meta.salt, current.meta.iterations)
+  const db = await initDB()
+  if (!hasPasswordMeta(current.meta)) {
+    if (await getPasskeyRecord()) throw new Error('This vault already opens with its passkey')
+    const raw = crypto.getRandomValues(new Uint8Array(32)).buffer
+    const key = await importVaultKey(raw)
+    const meta: PasskeyVaultMeta = { version: 1, kdf: 'none', check: await seal(key, CHECK_TEXT, CHECK_CONTEXT) }
+    const writes = await resealCards(current.key, key)
+    const { record, prfKey } = await registerPasskey(raw)
+    writes.push({ store: SETTINGS_STORE, key: VAULT_KEY, value: meta })
+    writes.push({ store: SETTINGS_STORE, key: PASSKEY_KEY, value: record })
+    if ((await db.get(SETTINGS_STORE, DEVICE_KEY)) !== undefined) {
+      writes.push({ store: SETTINGS_STORE, key: DEVICE_KEY, value: key })
+    }
+    await writeAll(writes)
+    session = { key, meta, prfKey }
+    return
+  }
+
+  const raw = await deriveVaultKeyBits(password ?? '', current.meta.salt, current.meta.iterations)
   if (!(await opensVault(await importVaultKey(raw), current.meta))) throw new WrongPasswordError()
 
   const { record, prfKey } = await registerPasskey(raw)
-  const db = await initDB()
   await db.put(SETTINGS_STORE, record, PASSKEY_KEY)
   session = { ...current, prfKey }
+}
+
+/** The writes that seal every card readable under `oldKey` again under `newKey`. */
+async function resealCards(oldKey: CryptoKey, newKey: CryptoKey): Promise<Write[]> {
+  const db = await initDB()
+  const writes: Write[] = []
+  for (const id of await db.getAllKeys(CARDS_STORE)) {
+    const value = await db.get(CARDS_STORE, id)
+    if (!value) continue
+    let card: LoyaltyCard | null = null
+    if (isSealed(value)) {
+      try {
+        card = JSON.parse(await unseal(oldKey, value, cardContext(String(id)))) as LoyaltyCard
+      } catch {
+        // Unreadable under the current key already: left as is
+      }
+    } else if (isPlainCard(value)) {
+      card = value
+    }
+    if (card) writes.push({ store: CARDS_STORE, key: String(id), value: await sealCard(newKey, card) })
+  }
+  return writes
 }
 
 /**
@@ -415,12 +483,14 @@ export async function unlockWithPasskey(): Promise<void> {
 
 /**
  * Stops unlocking with the passkey. The passkey itself stays in the device's password manager.
- * @throws Error when the vault has no password: the passkey is then the only way in
+ * @throws Error when the passkey is the only way in (no password, no device key)
  */
 export async function disablePasskeyUnlock(): Promise<void> {
   const meta = await getVaultMeta()
-  if (meta && !hasPasswordMeta(meta)) throw new Error('Set a password before turning off the passkey')
   const db = await initDB()
+  if (meta && !hasPasswordMeta(meta) && (await db.get(SETTINGS_STORE, DEVICE_KEY)) === undefined) {
+    throw new Error('Set a password before turning off the passkey')
+  }
   await db.delete(SETTINGS_STORE, PASSKEY_KEY)
 }
 
@@ -467,22 +537,7 @@ export async function setVaultPassword(newPassword: string, currentPassword?: st
     check: await seal(key, CHECK_TEXT, CHECK_CONTEXT),
   }
 
-  const writes: Write[] = []
-  for (const id of await db.getAllKeys(CARDS_STORE)) {
-    const value = await db.get(CARDS_STORE, id)
-    if (!value) continue
-    let card: LoyaltyCard | null = null
-    if (isSealed(value)) {
-      try {
-        card = JSON.parse(await unseal(current.key, value, cardContext(String(id)))) as LoyaltyCard
-      } catch {
-        // Unreadable under the current key already: left as is
-      }
-    } else if (isPlainCard(value)) {
-      card = value
-    }
-    if (card) writes.push({ store: CARDS_STORE, key: String(id), value: await sealCard(key, card) })
-  }
+  const writes = await resealCards(current.key, key)
   writes.push({ store: SETTINGS_STORE, key: VAULT_KEY, value: meta })
   if (record && prfKey) {
     writes.push({
@@ -507,13 +562,14 @@ export async function isDeviceRemembered(): Promise<boolean> {
 /**
  * "Don't ask on this device": keeps the vault key (non-extractable) in IndexedDB, so that the app
  * opens unlocked. Off forgets it.
- * @throws VaultLockedError (to turn it on)
+ * @throws VaultLockedError (to turn it on), Error to turn it off when it is the only way in
  */
 export async function setRememberDevice(remember: boolean): Promise<void> {
   const db = await initDB()
   if (remember) {
     await db.put(SETTINGS_STORE, unlocked().key, DEVICE_KEY)
   } else {
+    if (await deviceKeyIsOnlyWayIn()) throw new Error('Add a password or a passkey before locking the app')
     await db.delete(SETTINGS_STORE, DEVICE_KEY)
   }
 }

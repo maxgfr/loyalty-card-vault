@@ -5,7 +5,7 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 ![PWA](https://img.shields.io/badge/PWA-Ready-brightgreen)
 ![React 19](https://img.shields.io/badge/React-19-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
-![Tests](https://img.shields.io/badge/Tests-159%20passing-success)
+![Tests](https://img.shields.io/badge/Tests-163%20passing-success)
 
 ## ✨ Features
 
@@ -13,6 +13,7 @@ A secure Progressive Web App (PWA) for managing loyalty cards with barcode scann
 - **AES-256 Encryption**: Every card is encrypted at rest in IndexedDB
 - **Passwordless Option**: On a device with Touch ID, Face ID or a fingerprint reader, create the vault with a passkey and no password (a password can be added later)
 - **Password Protection**: Or a password, asked on every launch unless biometric unlock is on
+- **No Lock Option**: Or no lock at all: the app opens straight away on this device (cards still encrypted, the key kept on the device; see the trade-off below). A password or biometrics can be added later
 - **Biometric Unlock**: Optionally open the app with Touch ID, Face ID or a fingerprint (a passkey) instead of typing the password
 - **Don't Ask on This Device**: Optionally keep the vault unlocked on a device you trust (see the trade-off below)
 - **No Cloud Storage**: Everything stored locally in IndexedDB
@@ -102,6 +103,7 @@ The app can be installed on mobile devices and desktop:
 - **Key Derivation**: PBKDF2-SHA256, 600,000 iterations, random 16-byte salt per vault
 - **Password Requirements**: Minimum 8 characters with letter + number
 - **Storage**: IndexedDB (`loyalty-card-vault`) holds the sealed cards and the vault record (salt, iteration count and a sealed check value to recognise the right password). Neither the password nor the key is stored: the key stays in memory (non-extractable) while unlocked
+- **No lock (optional)**: a random key, kept on the device from the start as with "don't ask on this device" (same trade-off). It is the vault's only way in, so it is never removed (Lock Now keeps it) until a password or a passkey is added; adding a passkey gives the vault a new random key and re-encrypts every card, in one transaction
 - **No password (optional)**: a vault created with a passkey has a random 256-bit key (the `vault` record says `kdf: "none"`), sealed under the passkey's PRF output only. Setting a password later re-encrypts every card under PBKDF2(password), in one transaction, as does changing it (the passkey record and the device key follow)
 - **Upgrading**: cards saved unencrypted by earlier versions are encrypted when you set your password, in one transaction: if it fails, nothing changes
 - **Shared origin**: the app is served from `maxgfr.github.io`, whose storage every site there can read. They see ciphertext only
