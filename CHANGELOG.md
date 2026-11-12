@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.4...v1.9.0) (2026-11-12)
+
+### Features
+
+* reopen the last opened card on launch ([#20](https://github.com/maxgfr/loyalty-card-vault/issues/20)) ([3f434d7](https://github.com/maxgfr/loyalty-card-vault/commit/3f434d7187d802faf0a5eb03b80523fa052ffc91)), closes [#19](https://github.com/maxgfr/loyalty-card-vault/issues/19)
+
 ## [1.8.4](https://github.com/maxgfr/loyalty-card-vault/compare/v1.8.3...v1.8.4) (2026-11-02)
 
 ### Bug Fixes
