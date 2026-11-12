@@ -370,4 +370,58 @@ test.describe('Unlock without the password', () => {
     await unlock(page, 'Newpass456')
     await expect(page.getByText('Butcher')).toBeVisible()
   })
+
+  test('no lock: the app opens straight away, until a password is added and asked for', async ({ page }) => {
+    await freshStart(page)
+    await page.reload()
+    await page.getByTestId('setup-without-lock').click()
+    await page.click('.modal .btn--danger:has-text("No Lock")')
+    await expect(page.locator('.app-layout')).toBeVisible()
+    await addCard(page, 'Bike Shop', '4006381333931')
+    expect(await dumpDatabase(page)).not.toContain('4006381333931')
+
+    await page.goto('/')
+    await expect(page.getByText('Bike Shop')).toBeVisible()
+
+    // Nothing to lock with yet: no Lock Now, no way to drop the device key
+    await openSettings(page)
+    await expect(page.getByTestId('no-lock-note')).toBeVisible()
+    await expect(page.locator('button:has-text("Lock Now")')).toHaveCount(0)
+    await expect(page.locator('button:has-text("Ask to Unlock Again")')).toHaveCount(0)
+
+    await page.click('button:has-text("Set a Password")')
+    await page.locator('#vault-password-form input').nth(0).fill(PASSWORD)
+    await page.locator('#vault-password-form input').nth(1).fill(PASSWORD)
+    await page.click('.modal button:has-text("Save")')
+    await expect(page.getByText('Password set')).toBeVisible()
+    await page.click('button:has-text("Ask to Unlock Again")')
+    await expect(page.getByText('The app will ask to unlock again')).toBeVisible()
+
+    await page.goto('/')
+    await unlock(page, PASSWORD)
+    await expect(page.getByText('Bike Shop')).toBeVisible()
+  })
+
+  test('no lock, then Touch ID / Face ID without any password', async ({ page }) => {
+    await freshStart(page)
+    await addAuthenticator(page)
+    await page.reload()
+    await page.getByTestId('setup-without-lock').click()
+    await page.click('.modal .btn--danger:has-text("No Lock")')
+    await addCard(page, 'Bakery', '5012345678900')
+
+    await openSettings(page)
+    await page.click('button:has-text("Unlock with Touch ID / Face ID")')
+    await expect(page.getByText('Biometric unlock is on')).toBeVisible()
+    await page.click('button:has-text("Ask to Unlock Again")')
+    await expect(page.getByText('The app will ask to unlock again')).toBeVisible()
+
+    await page.goto('/')
+    await expect(page.getByText('Bakery')).toBeVisible()
+    await openSettings(page)
+    await page.click('button:has-text("Lock Now")')
+    await expect(page.getByTestId('passkey-only')).toBeVisible()
+    await page.getByTestId('passkey-unlock').click()
+    await expect(page.getByText('Bakery')).toBeVisible()
+  })
 })

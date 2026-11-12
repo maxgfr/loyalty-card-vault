@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { createVault, createVaultWithPasskey, enablePasskeyUnlock } from '../../lib/storage'
+import { Modal } from '../ui/Modal'
+import { createVault, createVaultWithPasskey, createVaultWithoutLock, enablePasskeyUnlock } from '../../lib/storage'
 import { isPasskeyAvailable, PasskeyCancelledError, PasskeyUnsupportedError } from '../../lib/passkey'
 import { passkeyErrorMessage } from './passkeyMessages'
 import { passwordSchema } from '../../lib/validation'
@@ -16,7 +17,7 @@ interface SetupPageProps {
 
 /**
  * First launch. With a platform authenticator, the vault is created with a passkey and no password
- * by default (a password stays possible); otherwise with a password.
+ * by default (a password stays possible); otherwise with a password. Or without a lock at all.
  */
 export function SetupPage({ plainCardCount, onComplete }: SetupPageProps) {
   const [password, setPassword] = useState('')
@@ -29,6 +30,7 @@ export function SetupPage({ plainCardCount, onComplete }: SetupPageProps) {
   // Created with a password: offer biometric unlock before going on, when this device can.
   const [offerPasskey, setOfferPasskey] = useState(false)
   const [isEnablingPasskey, setIsEnablingPasskey] = useState(false)
+  const [showNoLock, setShowNoLock] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -65,6 +67,61 @@ export function SetupPage({ plainCardCount, onComplete }: SetupPageProps) {
       setIsCreating(false)
     }
   }
+
+  const handleCreateWithoutLock = async () => {
+    setError('')
+    setIsCreating(true)
+    try {
+      await createVaultWithoutLock()
+      setShowNoLock(false)
+      onComplete()
+    } catch {
+      setShowNoLock(false)
+      setError(creationError())
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const noLockButton = (
+    <Button
+      type="button"
+      variant="ghost"
+      fullWidth
+      disabled={isCreating}
+      onClick={() => setShowNoLock(true)}
+      data-testid="setup-without-lock"
+    >
+      Continue Without a Lock
+    </Button>
+  )
+
+  const noLockModal = (
+    <Modal
+      isOpen={showNoLock}
+      onClose={() => setShowNoLock(false)}
+      title="Continue Without a Lock?"
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => setShowNoLock(false)} disabled={isCreating}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleCreateWithoutLock} loading={isCreating}>
+            No Lock
+          </Button>
+        </>
+      }
+    >
+      <p>
+        The app will open straight away on this device, with no password and no biometrics. Your cards are
+        still encrypted, but the key is kept on this device.
+      </p>
+      <p>
+        Anyone who can use this device, and any other site hosted on maxgfr.github.io, could then read
+        your cards. You can add a password or Touch ID / Face ID later in Settings.
+      </p>
+    </Modal>
+  )
 
   const handleEnablePasskey = async () => {
     setError('')
@@ -210,10 +267,12 @@ export function SetupPage({ plainCardCount, onComplete }: SetupPageProps) {
                 >
                   Use a Password Instead
                 </Button>
+                {noLockButton}
               </div>
             </div>
           </Card>
         </div>
+        {noLockModal}
       </div>
     )
   }
@@ -283,9 +342,11 @@ export function SetupPage({ plainCardCount, onComplete }: SetupPageProps) {
                 Use Touch ID / Face ID Instead
               </Button>
             )}
+            {noLockButton}
           </form>
         </Card>
       </div>
+      {noLockModal}
     </div>
   )
 }

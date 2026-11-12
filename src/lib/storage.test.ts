@@ -260,6 +260,61 @@ describe('vault storage', () => {
     })
   })
 
+  describe('vault without a lock', () => {
+    it('opens on every launch without asking, its cards sealed', async () => {
+      await seedPlain([card('a', '4006381333931', 'Grocery Club')])
+      await storage.createVaultWithoutLock()
+      expect(await storage.hasPassword()).toBe(false)
+      expect(await storage.hasPasskeyUnlock()).toBe(false)
+      expect(await rawDump()).not.toContain('4006381333931')
+
+      const next = await relaunch()
+      expect(await next.getVaultState()).toBe('unlocked')
+      expect((await next.getAllCards()).map(c => c.name)).toEqual(['Grocery Club'])
+    })
+
+    it('never loses its only way in: Lock Now keeps the device key, turning it off is refused', async () => {
+      await storage.createVaultWithoutLock()
+      await storage.lockVault()
+      expect(await storage.isDeviceRemembered()).toBe(true)
+      await expect(storage.setRememberDevice(false)).rejects.toThrow()
+      expect(await (await relaunch()).getVaultState()).toBe('unlocked')
+    })
+
+    it('gets a passkey without a password, then can ask again', async () => {
+      await storage.createVaultWithoutLock()
+      await storage.saveCard(card('a', '111'))
+      await storage.enablePasskeyUnlock()
+      expect(await storage.hasPasskeyUnlock()).toBe(true)
+      // Still opens straight away (the device key follows the new key)...
+      let next = await relaunch()
+      expect(await next.getVaultState()).toBe('unlocked')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+      // ...until asked to unlock again: then the passkey opens it
+      await next.setRememberDevice(false)
+      next = await relaunch()
+      expect(await next.getVaultState()).toBe('locked')
+      await next.unlockWithPasskey()
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+      // The passkey may go once the device key is back
+      await next.setRememberDevice(true)
+      await next.disablePasskeyUnlock()
+      expect(await next.hasPasskeyUnlock()).toBe(false)
+    })
+
+    it('gets a password, then can ask for it', async () => {
+      await storage.createVaultWithoutLock()
+      await storage.saveCard(card('a', '111'))
+      await storage.setVaultPassword('Secret123')
+      await storage.setRememberDevice(false)
+
+      const next = await relaunch()
+      expect(await next.getVaultState()).toBe('locked')
+      await next.unlockVault('Secret123')
+      expect((await next.getAllCards()).map(c => c.id)).toEqual(['a'])
+    })
+  })
+
   describe('changing the password', () => {
     it('without a passkey, needs the current password; nothing changes otherwise', async () => {
       await storage.createVault('Secret123')

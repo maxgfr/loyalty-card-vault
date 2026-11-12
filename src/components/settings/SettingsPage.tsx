@@ -216,6 +216,25 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
 
   // The current password is asked only when no passkey can confirm instead
   const needsCurrentPassword = vaultHasPassword && !passkeyEnabled
+  // No password, no passkey: the key kept on this device is the only way in, never removed
+  const noLock = !vaultHasPassword && !passkeyEnabled
+
+  const handleEnablePasskeyWithoutPassword = async () => {
+    setIsEnablingPasskey(true)
+    try {
+      await enablePasskeyUnlock()
+      setPasskeyEnabled(true)
+      setMessage({
+        type: 'success',
+        text: 'Biometric unlock is on. Choose “Ask to Unlock Again” to be asked for it when the app opens.',
+      })
+    } catch (err) {
+      const text = passkeyErrorMessage(err)
+      if (text) setMessage({ type: 'error', text })
+    } finally {
+      setIsEnablingPasskey(false)
+    }
+  }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -583,7 +602,7 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
           </p>
           <div className="settings-actions">
             {passkeyEnabled ? (
-              vaultHasPassword && (
+              (vaultHasPassword || deviceRemembered) && (
                 <Button variant="secondary" onClick={handleDisablePasskey} fullWidth>
                   Turn Off Biometric Unlock
                 </Button>
@@ -591,14 +610,15 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
             ) : (
               <Button
                 variant="secondary"
-                onClick={() => setShowPasskeyModal(true)}
+                onClick={vaultHasPassword ? () => setShowPasskeyModal(true) : handleEnablePasskeyWithoutPassword}
                 disabled={!passkeyAvailable}
+                loading={!vaultHasPassword && isEnablingPasskey}
                 fullWidth
               >
                 Unlock with Touch ID / Face ID
               </Button>
             )}
-            {passkeyEnabled && !vaultHasPassword && (
+            {passkeyEnabled && !vaultHasPassword && !deviceRemembered && (
               <p className="settings-section-description">
                 Touch ID / Face ID opens this vault. Set a password below to be able to turn it off.
               </p>
@@ -608,7 +628,11 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
                 Biometric unlock is not available in this browser or on this device.
               </p>
             )}
-            {deviceRemembered ? (
+            {noLock ? (
+              <p className="settings-section-description" data-testid="no-lock-note">
+                The app opens without a lock. Add Touch ID / Face ID or a password to be able to lock it.
+              </p>
+            ) : deviceRemembered ? (
               <Button variant="secondary" onClick={() => handleRememberDevice(false)} fullWidth>
                 Ask to Unlock Again
               </Button>
@@ -627,23 +651,27 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
               ? passkeyEnabled
                 ? 'Choose a new master password, even a forgotten one: Touch ID / Face ID confirms it is you.'
                 : 'Choose a new master password. Your cards stay as they are.'
-              : 'This vault opens with its passkey only. A password lets you open it without the passkey.'}
+              : passkeyEnabled
+                ? 'This vault opens with its passkey only. A password lets you open it without the passkey.'
+                : 'The app opens without a lock. A password lets you lock it.'}
           </p>
           <Button variant="secondary" onClick={() => setShowPasswordModal(true)} fullWidth>
             {vaultHasPassword ? 'Change Password' : 'Set a Password'}
           </Button>
         </Card>
 
-        <Card>
-          <h3 className="settings-section-title">🔒 Lock Vault</h3>
-          <p className="settings-section-description">
-            Forget the key until the vault is unlocked again
-            {deviceRemembered ? '. This also turns off “Don’t ask on this device”.' : ''}
-          </p>
-          <Button variant="secondary" onClick={onLock} fullWidth>
-            Lock Now
-          </Button>
-        </Card>
+        {!noLock && (
+          <Card>
+            <h3 className="settings-section-title">🔒 Lock Vault</h3>
+            <p className="settings-section-description">
+              Forget the key until the vault is unlocked again
+              {deviceRemembered ? '. This also turns off “Don’t ask on this device”.' : ''}
+            </p>
+            <Button variant="secondary" onClick={onLock} fullWidth>
+              Lock Now
+            </Button>
+          </Card>
+        )}
 
         <Card>
           <h3 className="settings-section-title">🗑️ Reset Data</h3>
@@ -757,6 +785,7 @@ export function SettingsPage({ onBack, onRefreshCards, onLock }: SettingsPagePro
                   <li><strong>Local storage only</strong>: Nothing is sent over the Internet</li>
                   <li><strong>Mandatory encryption</strong>: All cards are encrypted with AES-256-GCM, under a key derived from your password (PBKDF2-SHA256, 600,000 rounds)</li>
                   <li><strong>Password never stored</strong>: The key exists only in memory while the vault is unlocked. A forgotten password cannot be recovered: keep a backup</li>
+                  <li><strong>No lock (optional)</strong>: The app opens straight away; the key is kept on this device, so anyone holding it, and any other site on maxgfr.github.io, could read your cards. Add a password or Touch ID / Face ID at any time</li>
                   <li><strong>No password (optional)</strong>: A vault created with Touch ID / Face ID has a random key that only its passkey opens. Add a password in Settings as a fallback; backups then get a password of their own</li>
                   <li><strong>Biometric unlock (optional)</strong>: A passkey (Touch ID, Face ID, fingerprint) releases the key; it is sealed under a secret only your device's authenticator gives back, after verifying you</li>
                   <li><strong>"Don't ask on this device" (optional)</strong>: The key is kept on this device so the app opens unlocked. Anyone holding your unlocked device, and any other site on maxgfr.github.io, could then read your cards. Lock Now turns it off</li>

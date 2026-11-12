@@ -270,8 +270,18 @@ export function UnlockPage({ onUnlock, onErased, promptPasskey = true }: UnlockP
             <div className="setup-form" data-testid="passkey-only">
               {passkeyButton}
               {error && <p className="setup-error" role="alert">{error}</p>}
-              <Button type="button" variant="ghost" fullWidth onClick={() => setShowForgot(true)}>
-                Lost access to your passkey?
+              {!methods.passkey && (
+                <p className="setup-info-description">
+                  The key that opened this vault is no longer on this device: your cards cannot be decrypted.
+                </p>
+              )}
+              <Button
+                type="button"
+                variant={methods.passkey ? 'ghost' : 'primary'}
+                fullWidth
+                onClick={() => setShowForgot(true)}
+              >
+                {methods.passkey ? 'Lost access to your passkey?' : 'Reset the App'}
               </Button>
             </div>
           )}
@@ -281,7 +291,7 @@ export function UnlockPage({ onUnlock, onErased, promptPasskey = true }: UnlockP
       <Modal
         isOpen={showForgot}
         onClose={() => setShowForgot(false)}
-        title={methods.password ? 'Forgot your password?' : 'Lost access to your passkey?'}
+        title={methods.password ? 'Forgot your password?' : methods.passkey ? 'Lost access to your passkey?' : 'Reset the App?'}
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowForgot(false)} disabled={isErasing}>
@@ -317,6 +327,11 @@ export function UnlockPage({ onUnlock, onErased, promptPasskey = true }: UnlockP
             The password cannot be recovered, and without it your cards cannot be decrypted. You can erase
             the vault and start over, then import a backup if you have one (it opens with the password it
             was exported with).
+          </p>
+        ) : !methods.passkey ? (
+          <p>
+            Erase the vault and start over, then import a backup if you have one (it opens with the password
+            it was exported with).
           </p>
         ) : (
           <p>
